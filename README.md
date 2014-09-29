@@ -4,7 +4,6 @@ This package provides a Theano-based implementation of the deep
 Q-learning algorithm described in:
 
 [Playing Atari with Deep Reinforcement Learning](http://arxiv.org/abs/1312.5602)
-
 Volodymyr Mnih, Koray Kavukcuoglu, David Silver, Alex Graves, Ioannis
 Antonoglou, Daan Wierstra, Martin Riedmiller
 
