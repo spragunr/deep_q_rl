@@ -15,10 +15,6 @@ import argparse
 
 ROM_PATH = "/home/spragunr/neural_rl_libraries/roms/breakout.bin"
 
-# Build shift.so if necessary...
-if not os.path.isfile('shift.so'):
-    subprocess.Popen('python setup.py build_ext --inplace', shell=True)
-
 # Check for glue_port command line argument and set it up...
 parser = argparse.ArgumentParser(description='Neural rl agent.')
 parser.add_argument('--glue_port', type=str, default="4096",
@@ -26,7 +22,6 @@ parser.add_argument('--glue_port', type=str, default="4096",
 args, unknown = parser.parse_known_args()
 my_env = os.environ.copy()
 my_env["RLGLUE_PORT"] = args.glue_port
-
 
 # Start the necessary processes:
 p1 = subprocess.Popen(['rl_glue'], env=my_env)

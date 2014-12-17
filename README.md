@@ -7,7 +7,9 @@ Q-learning algorithm described in:
 Volodymyr Mnih, Koray Kavukcuoglu, David Silver, Alex Graves, Ioannis
 Antonoglou, Daan Wierstra, Martin Riedmiller
 
-The neural network code is largely borrowed from [Sander Dieleman's solution for the Galaxy Zoo Kaggle challenge](http://benanne.github.io/2014/04/05/galaxy-zoo.html). 
+The neural network code is largely borrowed from [Sander Dieleman's
+solution for the Galaxy Zoo Kaggle
+challenge](http://benanne.github.io/2014/04/05/galaxy-zoo.html).
 
 The results obtained with this code are not quite as good as the
 results from the paper.  This could just be a matter of parameter

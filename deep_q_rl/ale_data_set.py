@@ -5,6 +5,7 @@ It allocates more memory than necessary, then shifts all of the
 data back to 0 when the samples reach the end of the allocated memory.
 """
 
+import pyximport; pyximport.install()
 import shift
 import time
 import numpy as np
