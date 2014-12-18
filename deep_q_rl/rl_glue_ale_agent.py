@@ -325,7 +325,7 @@ class NeuralAgent(Agent):
         differently.
         """
         states, actions, rewards, next_states, terminals = \
-                                self.data_set.random_chunk(self.batch_size)
+                                self.data_set.random_batch(self.batch_size)
         return self.network.train(states, actions, rewards,
                                   next_states, terminals)
 
@@ -397,7 +397,7 @@ class NeuralAgent(Agent):
             epoch = int(in_message.split(" ")[1])
 
             if self.holdout_data is None:
-                self.holdout_data = self.data_set.random_chunk(holdout_size *
+                self.holdout_data = self.data_set.random_batch(holdout_size *
                                                           self.batch_size)[0]
             holdout_sum = 0
             for i in range(holdout_size):

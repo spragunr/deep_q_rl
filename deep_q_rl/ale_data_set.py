@@ -99,23 +99,52 @@ class DataSet(object):
         #assert self.no_terminal(index, end_index)
         return self.states[index:end_index + 1, ...]
 
-    def random_chunk(self, chunk_size):
-
-        count = 0
-        # Set aside memory for the chunk
-        states = np.empty((chunk_size, self.phi_length,
+    def _empty_batch(self, batch_size):
+        # Set aside memory for the batch
+        states = np.empty((batch_size, self.phi_length,
                            self.states.shape[1], self.states.shape[2]),
                           dtype=floatX)
-        actions = np.empty((chunk_size, 1), dtype='int32')
-        rewards = np.empty((chunk_size, 1), dtype=floatX)
-        terminals = np.empty((chunk_size, 1), dtype=bool)
+        actions = np.empty((batch_size, 1), dtype='int32')
+        rewards = np.empty((batch_size, 1), dtype=floatX)
+        terminals = np.empty((batch_size, 1), dtype=bool)
 
-        next_states = np.empty((chunk_size, self.phi_length,
+        next_states = np.empty((batch_size, self.phi_length,
                                 self.states.shape[1],
                                 self.states.shape[2]), dtype=floatX)
+        return states, actions, rewards, terminals, next_states
+
+    def batch_iterator(self, batch_size):
+        """ Generator for iterating over all valid batches. """
+        index = self._min_index()
+        batch_count = 0
+        states, actions, rewards, terminals, next_states = \
+                self._empty_batch(batch_size)      
+        while index <= self._max_index():
+            end_index = index + self.phi_length - 1
+            if self.no_terminal(index, end_index):
+                states[batch_count, ...] = self._make_phi(index)
+                actions[batch_count, 0] = self.actions[end_index]
+                rewards[batch_count, 0] = self.rewards[end_index]
+                terminals[batch_count, 0] = self.terminal[end_index+1]
+                next_states[batch_count, ...] = self._make_phi(index+1)
+                batch_count += 1
+            index += 1
+
+            if batch_count == batch_size:
+                yield states, actions, rewards, terminals, next_states
+                batch_count = 0
+                states, actions, rewards, terminals, next_states = \
+                    self._empty_batch(batch_size)      
+
+                
+    def random_batch(self, batch_size):
+
+        count = 0
+        states, actions, rewards, terminals, next_states = \
+            self._empty_batch(batch_size)
 
         # Grab random samples until we have enough
-        while count < chunk_size:
+        while count < batch_size:
             index = np.random.randint(self._min_index(), self._max_index()+1)
             end_index = index + self.phi_length - 1
             if self.no_terminal(index, end_index):
@@ -152,7 +181,7 @@ def simple_tests():
         print
     print "LAST PHI", dataset.last_phi()
     print
-    print 'CHUNK', dataset.random_chunk(2)
+    print 'BATCH', dataset.random_batch(2)
 
 
 def speed_tests():
@@ -172,7 +201,7 @@ def speed_tests():
 
     start = time.time()
     for i in range(200):
-        a = dataset.random_chunk(32)
+        a = dataset.random_batch(32)
     print "batches per second: ", 200 / (time.time() - start)
 
     print dataset.last_phi()
@@ -190,7 +219,7 @@ def trivial_tests():
     dataset.add_sample(img2, 2, 2, False)
     dataset.add_sample(img3, 2, 2, True)
     print "last", dataset.last_phi()
-    print "random", dataset.random_chunk(1)
+    print "random", dataset.random_batch(1)
 
 
 def max_size_tests():
@@ -210,8 +239,24 @@ def max_size_tests():
         print "passed"
 
 
+def test_iterator():
+    dataset = DataSet(width=2, height=1, max_steps=10, phi_length=2)
 
-def test_random_chunk():
+    img1 = np.array([[1, 1]], dtype='uint8')
+    img2 = np.array([[2, 2]], dtype='uint8')
+    img3 = np.array([[3, 3]], dtype='uint8')
+    img4 = np.array([[3, 3]], dtype='uint8')
+
+    dataset.add_sample(img1, 1, 1, False)
+    dataset.add_sample(img2, 2, 2, False)
+    dataset.add_sample(img3, 3, 3, False)
+    dataset.add_sample(img4, 4, 4, True)
+
+    for s, a, r, t, ns in dataset.batch_iterator(2):
+        print "s ", s, "a ",a, "r ",r,"t ", t,"ns ", ns
+
+
+def test_random_batch():
     dataset1 = DataSet(width=3, height=4, max_steps=50, phi_length=4)
     dataset2 = DataSet(width=3, height=4, max_steps=50, phi_length=4,
                        capacity=2000)
@@ -230,11 +275,11 @@ def test_random_chunk():
         if i > 10:
             np.random.seed(i*11 * i)
             states1, actions1, rewards1, next_states1, terminals1 = \
-                dataset1.random_chunk(10)
+                dataset1.random_batch(10)
 
             np.random.seed(i*11 * i)
             states2, actions2, rewards2, next_states2, terminals2 = \
-                dataset2.random_chunk(10)
+                dataset2.random_batch(10)
             np.testing.assert_array_almost_equal(states1, states2)
             np.testing.assert_array_almost_equal(actions1, actions2)
             np.testing.assert_array_almost_equal(rewards1, rewards2)
@@ -271,9 +316,10 @@ def test_memory_usage_ok():
 def main():
     #speed_tests()
     #test_memory_usage_ok()
-    #test_random_chunk()
+    #test_random_batch()
     #max_size_tests()
-    simple_tests()
+    #simple_tests()
+    test_iterator()
 
 if __name__ == "__main__":
     main()
