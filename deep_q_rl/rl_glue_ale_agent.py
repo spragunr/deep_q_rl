@@ -379,12 +379,19 @@ class NeuralAgent(Agent):
         if in_message.startswith("episode_end"):
             self.agent_end(0)
 
-        if in_message.startswith("start_testing"):
+        elif in_message.startswith("finish_epoch"):
+            epoch = int(in_message.split(" ")[1])
+            net_file = open(self.exp_dir + '/network_file_' + str(epoch) + \
+                            '.pkl', 'w')
+            cPickle.dump(self.network, net_file, -1)
+            net_file.close()
+
+        elif in_message.startswith("start_testing"):
             self.testing = True
             self.total_reward = 0
             self.episode_counter = 0
 
-        if in_message.startswith("finish_testing"):
+        elif in_message.startswith("finish_testing"):
             self.testing = False
             holdout_size = 100
             epoch = int(in_message.split(" ")[1])
@@ -399,10 +406,6 @@ class NeuralAgent(Agent):
 
             self._update_results_file(epoch, self.episode_counter,
                                       holdout_sum / holdout_size)
-            net_file = open(self.exp_dir + '/network_file_' + str(epoch) + \
-                            '.pkl', 'w')
-            cPickle.dump(self.network, net_file, -1)
-
         else:
             return "I don't know how to respond to your message"
 

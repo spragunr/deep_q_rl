@@ -56,12 +56,13 @@ def main():
     RLGlue.RL_init()
 
     for epoch in range(1, args.num_epochs + 1):
-        RLGlue.RL_agent_message("training")
         run_epoch(epoch, args.epoch_length, "training")
-
-        RLGlue.RL_agent_message("start_testing")
-        run_epoch(epoch, args.test_length, "testing")
-        RLGlue.RL_agent_message("finish_testing " + str(epoch))
+        RLGlue.RL_agent_message("finish_epoch " + str(epoch))
+        
+        if args.test_length > 0:
+            RLGlue.RL_agent_message("start_testing")
+            run_epoch(epoch, args.test_length, "testing")
+            RLGlue.RL_agent_message("finish_testing " + str(epoch))
 
 
 if __name__ == "__main__":
