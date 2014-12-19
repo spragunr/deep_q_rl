@@ -73,6 +73,12 @@ class NeuralAgent(Agent):
                             help='Learning rate')
         parser.add_argument('--discount', type=float, default=.9,
                             help='Discount rate')
+        parser.add_argument('--epsilon_start', type=float, default=1.0,
+                            help='Starting value for epsilon.')
+        parser.add_argument('--epsilon_min', type=float, default=0.1,
+                            help='Minimum epsilon.')
+        parser.add_argument('--epsilon_decay', type=float, default=1000000,
+                            help='Number of steps to minimum epsilon.')
         parser.add_argument('--phi_length', type=int, default=4,
                             help='History length')
         parser.add_argument('--max_history', type=int, default=1000000,
@@ -85,7 +91,6 @@ class NeuralAgent(Agent):
                             help='Pickle file containing trained net.')
         parser.add_argument('--pause', type=float, default=0,
                             help='Amount of time to pause display while testing.')
-
         # Create instance variables directy from the arguments:
         parser.parse_known_args(namespace=self)
 
@@ -137,8 +142,12 @@ class NeuralAgent(Agent):
                                                   height=CROPPED_HEIGHT,
                                                   max_steps=10,
                                                   phi_length=self.phi_length)
-        self.epsilon = 1.
-        self.epsilon_rate = .9 / self.max_history
+        self.epsilon = self.epsilon_start
+        if self.epsilon_decay != 0:
+            self.epsilon_rate = .9 / self.epsilon_decay
+        else:
+            self.epsilon_rate = 0
+            
 
         self.testing = False
 
@@ -285,7 +294,8 @@ class NeuralAgent(Agent):
 
         #NOT TESTING---------------------------
         else:
-            self.epsilon = max(.1, self.epsilon - self.epsilon_rate)
+            self.epsilon = max(self.epsilon_min, 
+                               self.epsilon - self.epsilon_rate)
 
             int_action = self._choose_action(self.data_set, self.epsilon,
                                              cur_img, np.clip(reward, -1, 1))

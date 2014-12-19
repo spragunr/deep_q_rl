@@ -255,7 +255,7 @@ class CNNQLearner(object):
         or return the optimal action. 
         """
         if np.random.random() < epsilon:
-            return np.random.randint(0, self.num_actions-1)
+            return np.random.randint(0, self.num_actions)
         else:
             return np.argmax(self.q_vals(state))
 
