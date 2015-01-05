@@ -403,12 +403,12 @@ class NeuralAgent(Agent):
 
         elif in_message.startswith("finish_testing"):
             self.testing = False
-            holdout_size = 100
+            holdout_size = 3200
             epoch = int(in_message.split(" ")[1])
 
             if self.holdout_data is None:
-                self.holdout_data = self.data_set.random_batch(holdout_size *
-                                                          self.batch_size)[0]
+                self.holdout_data = self.data_set.random_batch(holdout_size)[0]
+
             holdout_sum = 0
             for i in range(holdout_size):
                 holdout_sum += np.mean(
