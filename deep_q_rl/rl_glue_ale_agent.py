@@ -48,6 +48,9 @@ import cnn_q_learner
 import ale_data_set
 import theano
 
+import sys
+sys.setrecursionlimit(10000)
+
 floatX = theano.config.floatX
 
 IMG_WIDTH = 80
