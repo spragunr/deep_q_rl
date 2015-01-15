@@ -54,6 +54,11 @@ After a couple of days, you can watch the trained network play using the
 
 `$ python ale_run_watch.py data_09-29-15-46_0p0001_0p9/network_file_99.pkl`
 
+# Getting Help
+
+The [deep Q-learning web-forum](https://groups.google.com/forum/#!forum/deep-q-learning)
+can be used for discussion and advice related to deep Q-learning in
+general and this package in particular.
 
 # See Also
 
