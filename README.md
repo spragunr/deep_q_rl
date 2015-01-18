@@ -67,6 +67,9 @@ general and this package in particular.
   This is a work in progress.  Their project is described here: 
   http://robohub.org/artificial-general-intelligence-that-plays-atari-video-games-how-did-deepmind-do-it/
 
+* https://github.com/muupan/dqn-in-the-caffe
+  Working Caffe-based implementation.  (I haven't tried it out, but there is a video of the agent playing Pong successfully.) 
+
 * https://github.com/brian473/neural_rl
 
   This is an almost-working implementation developed last spring by my
