@@ -25,8 +25,10 @@ my_env["RLGLUE_PORT"] = args.glue_port
 
 # Start the necessary processes:
 p1 = subprocess.Popen(['rl_glue'], env=my_env)
-p2 = subprocess.Popen('ale -game_controller rlglue -frame_skip 4 '+ ROM_PATH,
-                      shell=True, env=my_env)
+
+ale_string = ("ale -game_controller rlglue -frame_skip 4 "
+              "-restricted_action_set true ")
+p2 = subprocess.Popen(ale_string + ROM_PATH, shell=True, env=my_env)
 p3 = subprocess.Popen(['./rl_glue_ale_experiment.py'], env=my_env)
 p4 = subprocess.Popen(['./rl_glue_ale_agent.py'] + sys.argv[1:], env=my_env)
 

@@ -136,6 +136,19 @@ void RLGlueController::rlGlueLoop() {
 void RLGlueController::envInit() {
   unsigned int taskSpecLength = 0;
   unsigned int offset = 0;
+   
+  std::string actionSpec;
+  char numstr[21]; 
+  int numActions;
+  if (m_osystem->settings().getBool("restricted_action_set")) {
+    numActions = m_settings->getMinimalActionSet().size();
+  }
+  else {
+    numActions = m_settings->getAllActions().size();
+  }
+  sprintf(numstr, "%d", numActions - 1);
+  actionSpec = std::string("ACTIONS INTS (0 ") + 
+    numstr + std::string(") ");
  
   // Possibly this should be one big snprintf.
   std::string taskSpec = std::string("") +
@@ -146,7 +159,8 @@ void RLGlueController::envInit() {
     //"OBSERVATIONS INTS (128 0 255)(33600 0 127) "+ // RAM, then screen
     "OBSERVATIONS INTS (8400 0 255) "+ // downsampled bw screen
     //"ACTIONS INTS (0 17) "+ // Inactive PlayerB 
-    "ACTIONS INTS (0 17)(18 35) "+ // Two actions: player A and player B
+    actionSpec + 
+    //"ACTIONS INTS (0 6)(18 35) "+ // Two actions: player A and player B
     "REWARDS (UNSPEC UNSPEC) "+ // While rewards are technically bounded, this is safer 
     "EXTRA Name: Arcade Learning Environment ";
 
@@ -185,13 +199,20 @@ void RLGlueController::envStep() {
   offset = rlCopyBufferToADT(&m_buffer, offset, &m_rlglue_action);
   __RL_CHECK_STRUCT(&m_rlglue_action);
 
+  ActionVect legal_actions;
+  if (m_osystem->settings().getBool("restricted_action_set")) {
+    legal_actions = m_settings->getMinimalActionSet();
+  } else {
+    legal_actions = m_settings->getAllActions();
+  }
+
   // We expect here an integer-valued action
-  Action player_a_action = (Action)m_rlglue_action.intArray[0];
-  Action player_b_action = (Action)m_rlglue_action.intArray[1]; 
+  Action player_a_action = legal_actions[m_rlglue_action.intArray[0]];
+  Action player_b_action = (Action)PLAYER_B_NOOP;
 
   // Filter out non-regular actions ... let RL-Glue deal with those
-  filterActions(player_a_action, player_b_action);
- 
+  //filterActions(player_a_action, player_b_action);
+
   // Pass these actions to ALE
   reward_t reward = applyActions(player_a_action, player_b_action);
 
