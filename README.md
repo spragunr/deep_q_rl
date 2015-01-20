@@ -31,7 +31,7 @@ Here is a video showing a trained network playing breakout:
   * [Pylearn2](http://deeplearning.net/software/pylearn2/) ([https://github.com/lisa-lab/pylearn2](https://github.com/lisa-lab/pylearn2))
   * [Arcade Learning Environment](http://www.arcadelearningenvironment.org/) ([https://github.com/mgbellemare/Arcade-Learning-Environment](https://github.com/mgbellemare/Arcade-Learning-Environment))
 
-     We need a slightly modified version of ALE.  You'll need to replace `rlglue_controller.cpp` with the provided version before compiling.  This version handles down-sampling the image and  converting to gray-scale.
+     We need a slightly modified version of ALE.  You'll need to replace `rlglue_controller.cpp` with the provided version before compiling.  This version handles down-sampling the image and converting to gray-scale.  It also updates the RLGlue interface to respect the "-restricted_action_set" flag. 
 * [RL-Glue](http://glue.rl-community.org/wiki/Main_Page)
 * [RL-Glue Python Codec](http://glue.rl-community.org/wiki/Python_Codec)
 
@@ -68,7 +68,8 @@ general and this package in particular.
   http://robohub.org/artificial-general-intelligence-that-plays-atari-video-games-how-did-deepmind-do-it/
 
 * https://github.com/muupan/dqn-in-the-caffe
-  Working Caffe-based implementation.  (I haven't tried it out, but there is a video of the agent playing Pong successfully.) 
+
+  Working Caffe-based implementation.  (I haven't tried it, but there is a video of the agent playing Pong successfully.) 
 
 * https://github.com/brian473/neural_rl
 
