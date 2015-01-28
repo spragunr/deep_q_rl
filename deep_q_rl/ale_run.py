@@ -13,7 +13,8 @@ import sys
 import os
 import argparse
 
-ROM_PATH = "/home/spragunr/neural_rl_libraries/roms/breakout.bin"
+# Put your binaries under the directory 'deep_q_rl/roms'
+ROM_PATH = "../roms/breakout.bin"
 
 # Check for glue_port command line argument and set it up...
 parser = argparse.ArgumentParser(description='Neural rl agent.')
