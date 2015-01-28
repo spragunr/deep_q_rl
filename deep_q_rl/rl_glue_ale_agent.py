@@ -72,9 +72,9 @@ class NeuralAgent(Agent):
 
         # Handle command line argument:
         parser = argparse.ArgumentParser(description='Neural rl agent.')
-        parser.add_argument('--learning_rate', type=float, default=.0001,
+        parser.add_argument('--learning_rate', type=float, default=.00005,
                             help='Learning rate')
-        parser.add_argument('--discount', type=float, default=.9,
+        parser.add_argument('--discount', type=float, default=.95,
                             help='Discount rate')
         parser.add_argument('--epsilon_start', type=float, default=1.0,
                             help='Starting value for epsilon.')
