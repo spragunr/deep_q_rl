@@ -38,7 +38,7 @@ import time
 
 import random
 import numpy as np
-import cv2
+#import cv2
 
 import argparse
 
@@ -59,6 +59,11 @@ IMG_HEIGHT = 105
 CROPPED_WIDTH = 80
 CROPPED_HEIGHT = 80
 
+# Number of rows to crop off the bottom of the (downsampled) screen.
+# This is appropriate for breakout, but it may need to be modified
+# for other games. 
+CROP_OFFSET = 8
+
 
 class NeuralAgent(Agent):
     randGenerator=random.Random()
@@ -72,8 +77,12 @@ class NeuralAgent(Agent):
 
         # Handle command line argument:
         parser = argparse.ArgumentParser(description='Neural rl agent.')
-        parser.add_argument('--learning_rate', type=float, default=.00005,
+        parser.add_argument('--learning_rate', type=float, default=.0002,
                             help='Learning rate')
+        parser.add_argument('--rms_decay', type=float, default=.99,
+                            help='Decay rate for rms_prop')
+        parser.add_argument('--momentum', type=float, default=0,
+                            help='Momentum term for Nesterov momentum.')
         parser.add_argument('--discount', type=float, default=.95,
                             help='Discount rate')
         parser.add_argument('--epsilon_start', type=float, default=1.0,
@@ -188,6 +197,8 @@ class NeuralAgent(Agent):
                                          CROPPED_HEIGHT,
                                          discount=self.discount,
                                          learning_rate=self.learning_rate,
+                                         decay=self.rms_decay,
+                                         momentum=self.momentum,
                                          batch_size=self.batch_size,
                                          approximator='cuda_conv')
         
@@ -261,9 +272,9 @@ class NeuralAgent(Agent):
 
     def _resize_observation(self, observation):
         img = observation.reshape(IMG_WIDTH, IMG_HEIGHT)
-        img = np.array(img, dtype=floatX)
-        img = cv2.resize(img, (CROPPED_HEIGHT, CROPPED_WIDTH),
-        interpolation=cv2.INTER_LINEAR)
+        bottom_row = IMG_HEIGHT - CROP_OFFSET
+        top_row = bottom_row - CROPPED_HEIGHT
+        img = img[:, top_row:bottom_row]
         img = np.array(img, dtype='uint8')
         return img.ravel()
 

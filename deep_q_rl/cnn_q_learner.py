@@ -55,7 +55,7 @@ class CNNQLearner(object):
     neural network."""
 
     def __init__(self, num_actions, phi_length, width, height,
-                 discount=.9, learning_rate=.01,
+                 discount=.9, learning_rate=.01, decay=.9, momentum=0,
                  batch_size=32,
                  approximator='none'):
         self._batch_size = batch_size
@@ -66,6 +66,8 @@ class CNNQLearner(object):
         self._discount = discount
         self.num_actions = num_actions
         self.learning_rate = learning_rate
+        self.decay = decay
+        self.momentum = momentum
         self.scale_input_by = 255.0
 
         # CONSTRUCT THE LAYERS
@@ -204,9 +206,14 @@ class CNNQLearner(object):
                                  (self._idx+1)*self._batch_size, :]
              }
 
-        self._updates = layers.gen_updates_rmsprop_and_nesterov_momentum(\
-            self._loss, self._parameters, learning_rate=self.learning_rate,
-            rho=0.9, momentum=0.9, epsilon=1e-6)
+        if self.momentum != 0:
+            self._updates = layers.gen_updates_rmsprop_and_nesterov_momentum(\
+                self._loss, self._parameters, learning_rate=self.learning_rate,
+                rho=self.decay, momentum=self.momentum, epsilon=1e-6)
+        else:
+            self._updates = layers.gen_updates_rmsprop(self._loss,
+                self._parameters, learning_rate=self.learning_rate,
+                rho=self.decay, epsilon=1e-6)
 
         self._train = theano.function([self._idx], self._loss,
                                       givens=self._givens,
@@ -240,7 +247,7 @@ class CNNQLearner(object):
 
 
     def q_vals(self, state):
-        """ Return an array of q-values for the indicated state (phi) 
+        """ Return an array of q-values for the indicated state (phi)
         """
         state_batch = np.zeros((self._batch_size,
                           self._phi_length,
@@ -250,9 +257,9 @@ class CNNQLearner(object):
         return self._compute_q_vals(state_batch)[0, :]
 
     def choose_action(self, state, epsilon):
-        """ 
+        """
         Choose a random action with probability epsilon,
-        or return the optimal action. 
+        or return the optimal action.
         """
         if np.random.random() < epsilon:
             return np.random.randint(0, self.num_actions)
