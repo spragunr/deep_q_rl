@@ -38,7 +38,7 @@ import time
 
 import random
 import numpy as np
-#import cv2
+import cv2
 
 import argparse
 
@@ -53,11 +53,11 @@ sys.setrecursionlimit(10000)
 
 floatX = theano.config.floatX
 
-IMG_WIDTH = 80
-IMG_HEIGHT = 105
+IMAGE_WIDTH = 160
+IMAGE_HEIGHT = 210
 
-CROPPED_WIDTH = 80
-CROPPED_HEIGHT = 80
+CROPPED_WIDTH = 84
+CROPPED_HEIGHT = 84
 
 # Number of rows to crop off the bottom of the (downsampled) screen.
 # This is appropriate for breakout, but it may need to be modified
@@ -271,12 +271,27 @@ class NeuralAgent(Agent):
         plt.show()
 
     def _resize_observation(self, observation):
-        img = observation.reshape(IMG_WIDTH, IMG_HEIGHT)
-        bottom_row = IMG_HEIGHT - CROP_OFFSET
-        top_row = bottom_row - CROPPED_HEIGHT
-        img = img[:, top_row:bottom_row]
-        img = np.array(img, dtype='uint8')
-        return img.ravel()
+        # reshape linear to original image size, skipping the RAM bit
+        image = observation[128:].reshape(IMAGE_HEIGHT, IMAGE_WIDTH, 3)
+        # convert from int32s
+        image = np.array(image, dtype="uint8")
+
+        # convert to greyscale
+        greyscaled = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+
+        # resize keeping aspect ratio
+        resize_width = CROPPED_WIDTH
+        resize_height = int(round(float(IMAGE_HEIGHT) * CROPPED_HEIGHT / IMAGE_WIDTH))
+
+
+        resized = cv2.resize(greyscaled, (resize_width, resize_height),
+        interpolation=cv2.INTER_LINEAR)
+
+        # Crop the part we want
+        crop_y_cutoff = resize_height - CROP_OFFSET - CROPPED_HEIGHT
+        cropped = resized[crop_y_cutoff:crop_y_cutoff + CROPPED_HEIGHT, :]
+
+        return cropped
 
 
     def agent_step(self, reward, observation):
@@ -296,7 +311,6 @@ class NeuralAgent(Agent):
         return_action = Action()
 
         cur_img = np.array(self._resize_observation(observation.intArray))
-        cur_img = cur_img.reshape(CROPPED_WIDTH, CROPPED_HEIGHT).T
 
         #TESTING---------------------------
         if self.testing:
