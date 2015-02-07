@@ -253,8 +253,7 @@ class NeuralAgent(Agent):
 
         self.last_action = copy.deepcopy(return_action)
 
-        self.last_img = np.array(self._resize_observation(observation.intArray))
-        self.last_img = self.last_img.reshape(CROPPED_WIDTH, CROPPED_HEIGHT).T
+        self.last_img = self._resize_observation(observation.intArray)
 
         return return_action
 
@@ -310,7 +309,7 @@ class NeuralAgent(Agent):
         self.step_counter += 1
         return_action = Action()
 
-        cur_img = np.array(self._resize_observation(observation.intArray))
+        cur_img = self._resize_observation(observation.intArray)
 
         #TESTING---------------------------
         if self.testing:
