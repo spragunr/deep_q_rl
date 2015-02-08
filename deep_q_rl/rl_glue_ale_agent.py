@@ -280,8 +280,8 @@ class NeuralAgent(Agent):
 
         # resize keeping aspect ratio
         resize_width = CROPPED_WIDTH
-        resize_height = int(round(float(IMAGE_HEIGHT) * CROPPED_HEIGHT / IMAGE_WIDTH))
-
+        resize_height = int(round(float(IMAGE_HEIGHT) * CROPPED_HEIGHT / 
+                                  IMAGE_WIDTH))
 
         resized = cv2.resize(greyscaled, (resize_width, resize_height),
         interpolation=cv2.INTER_LINEAR)

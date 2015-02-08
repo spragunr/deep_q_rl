@@ -30,8 +30,7 @@ Here is a video showing a trained network playing breakout:
   * [Theano](http://deeplearning.net/software/theano/) ([https://github.com/Theano/Theano](https://github.com/Theano/Theano))
   * [Pylearn2](http://deeplearning.net/software/pylearn2/) ([https://github.com/lisa-lab/pylearn2](https://github.com/lisa-lab/pylearn2))
   * [Arcade Learning Environment](http://www.arcadelearningenvironment.org/) ([https://github.com/mgbellemare/Arcade-Learning-Environment](https://github.com/mgbellemare/Arcade-Learning-Environment))
-
-     We need a slightly modified version of ALE.  You'll need to replace `rlglue_controller.cpp` with the provided version before compiling.  This version handles down-sampling the image and converting to gray-scale.  It also updates the RLGlue interface to respect the "-restricted_action_set" flag. 
+     * Make sure that you set the `USE_RLGLUE` flag to 1 in the makefile.
 * [RL-Glue](http://glue.rl-community.org/wiki/Main_Page)
 * [RL-Glue Python Codec](http://glue.rl-community.org/wiki/Python_Codec)
 

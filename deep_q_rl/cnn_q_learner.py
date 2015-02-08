@@ -55,7 +55,7 @@ class CNNQLearner(object):
     neural network."""
 
     def __init__(self, num_actions, phi_length, width, height,
-                 discount=.9, learning_rate=.01, decay=.9, momentum=0,
+                 discount, learning_rate, decay, momentum=0,
                  batch_size=32,
                  approximator='none'):
         self._batch_size = batch_size
