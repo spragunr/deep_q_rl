@@ -11,11 +11,6 @@ The neural network code is largely borrowed from [Sander Dieleman's
 solution for the Galaxy Zoo Kaggle
 challenge](http://benanne.github.io/2014/04/05/galaxy-zoo.html).
 
-The results obtained with this code are not quite as good as the
-results from the paper.  This could just be a matter of parameter
-tuning (I've done very little) or it could be something more
-fundamental.
-
 Here is a video showing a trained network playing breakout:
 
  http://youtu.be/SZ88F82KLX4
