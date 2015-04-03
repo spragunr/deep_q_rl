@@ -47,6 +47,7 @@ import matplotlib.pyplot as plt
 import cnn_q_learner
 import ale_data_set
 import theano
+from network import DeepQLearner
 
 import sys
 sys.setrecursionlimit(10000)
@@ -187,6 +188,7 @@ class NeuralAgent(Agent):
 
 
     def _init_network(self):
+        return DeepQLearner(CROPPED_WIDTH, CROPPED_HEIGHT, self.num_actions, self.phi_length, self.batch_size)
         """
         A subclass may override this if a different sort
         of network is desired.
