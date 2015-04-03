@@ -33,11 +33,11 @@ class DeepQLearner:
         self.rho = 0.99
         self.lr = 0.00020 # learning rate
         self.momentum = 0.0
-        self.freeze_targets = False
+        self.freeze_targets = True
 
-        self.l_out = self.build_small_network(input_width, input_height, output_dim, num_frames, batch_size)
+        self.l_out = self.build_network(input_width, input_height, output_dim, num_frames, batch_size)
         if self.freeze_targets:
-            self.next_l_out = self.build_small_network(input_width, input_height, output_dim, num_frames, batch_size)
+            self.next_l_out = self.build_network(input_width, input_height, output_dim, num_frames, batch_size)
             self.reset_q_hat()
 
         states = T.tensor4('states')
@@ -114,7 +114,8 @@ class DeepQLearner:
                 strides=(1,1),
                 nonlinearity=lasagne.nonlinearities.rectify,
                 W=lasagne.init.Uniform(0.01),
-                b=lasagne.init.Constant(0.1)
+                b=lasagne.init.Constant(0.1),
+                dimshuffle=False
                 )
 
         l_conv3 = cuda_convnet.c01b_to_bc01(l_conv3)
@@ -134,6 +135,7 @@ class DeepQLearner:
                 W=lasagne.init.Uniform(0.01),
                 b=lasagne.init.Constant(0.1)
                 )
+
         return l_out
 
     def build_small_network(self, input_width, input_height, output_dim, num_frames, batch_size):
