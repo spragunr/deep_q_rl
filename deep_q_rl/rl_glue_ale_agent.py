@@ -161,7 +161,7 @@ class NeuralAgent(Agent):
         else:
             self.epsilon_rate = 0
             
-
+        self.target_reset_freq = 10000 # target network update frequency
         self.testing = False
 
         if self.nn_file is None:
@@ -242,7 +242,6 @@ class NeuralAgent(Agent):
            An action of type rlglue.types.Action
         """
 
-        self.step_counter = 0
         self.batch_counter = 0
 
         # We report the mean loss for every epoch.
@@ -312,6 +311,9 @@ class NeuralAgent(Agent):
         return_action = Action()
 
         cur_img = self._resize_observation(observation.intArray)
+
+        if self.step_counter % self.target_reset_freq == 0:
+            self.network.reset_q_hat()
 
         #TESTING---------------------------
         if self.testing:
