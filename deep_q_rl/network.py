@@ -29,10 +29,10 @@ class DeepQLearner:
         self.output_dim = output_dim
         self.num_frames = num_frames
         self.batch_size = batch_size
-        self.gamma = 0.95 # discount factor
+        self.gamma = 0.99 # discount factor
         self.rho = 0.99
-        self.lr = 0.00020 # learning rate
-        self.momentum = 0.0
+        self.lr = 0.00025 # learning rate
+        self.momentum = 0.95
         self.freeze_targets = True
 
         self.l_out = self.build_network(input_width, input_height, output_dim, num_frames, batch_size)
