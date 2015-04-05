@@ -173,7 +173,7 @@ class NeuralAgent(Agent):
         self._open_results_file()
         self._open_learning_file()
 
-        self.step_counter = 0
+        self.total_steps = 0
         self.episode_counter = 0
         self.batch_counter = 0
 
@@ -242,6 +242,7 @@ class NeuralAgent(Agent):
            An action of type rlglue.types.Action
         """
 
+        self.step_counter = 0
         self.batch_counter = 0
 
         # We report the mean loss for every epoch.
@@ -308,11 +309,12 @@ class NeuralAgent(Agent):
         """
 
         self.step_counter += 1
+        self.total_steps += 1
         return_action = Action()
 
         cur_img = self._resize_observation(observation.intArray)
 
-        if self.step_counter % self.target_reset_freq == 0:
+        if self.total_steps % self.target_reset_freq == 0:
             self.network.reset_q_hat()
 
         #TESTING---------------------------
@@ -383,6 +385,7 @@ class NeuralAgent(Agent):
         """
         self.episode_counter += 1
         self.step_counter += 1
+        self.total_steps += 1
         total_time = time.time() - self.start_time
 
         if self.testing:
