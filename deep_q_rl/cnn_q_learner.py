@@ -242,7 +242,7 @@ class CNNQLearner(object):
         self.q_layers[3].W.set_value(net.q_layers[3].W.get_value())
         self.q_layers[3].b.set_value(net.q_layers[3].b.get_value())
         # hidden layer
-        self.q_layers[5].b.set_value(net.q_layers[5].b.get_value())
+        self.q_layers[5].W.set_value(net.q_layers[5].W.get_value())
         self.q_layers[5].b.set_value(net.q_layers[5].b.get_value())
 
 
