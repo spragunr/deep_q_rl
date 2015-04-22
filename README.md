@@ -29,6 +29,10 @@ Here is a video showing a trained network playing breakout:
 * [RL-Glue](http://glue.rl-community.org/wiki/Main_Page)
 * [RL-Glue Python Codec](http://glue.rl-community.org/wiki/Python_Codec)
 
+* For a quick setup, you can run :
+     bash dep_script.sh 
+  to complete above dependencies configuration (test passed on ubuntu14.04)
+
 
 # Running
 
