@@ -38,8 +38,17 @@ cd ..
 
 
 echo "==>installing rlglue3.04..."
-
-
+sudo apt-get install wget
+if [ ! -d "./rlglue-3.04" ]
+then
+wget http://rl-glue-ext.googlecode.com/files/rlglue-3.04.tar.gz
+tar -xvf rlglue-3.04.tar.gz
+fi
+cd ./rlglue-3.04
+./configure
+make
+sudo make install
+cd ..
 
 
 if [ ! -d "./rlglue-py" ]
@@ -55,7 +64,6 @@ echo "==>installing OpenCV..."
 sudo apt-get install libgtk2.0-dev pkg-config
 sudo apt-get install build-essential
 sudo apt-get install cmake
-sudo apt-get install wget
 if [ ! -f "opencv-2.4.9.zip" ]
 then
 wget http://jaist.dl.sourceforge.net/project/opencvlibrary/opencv-unix/2.4.9/opencv-2.4.9.zip
