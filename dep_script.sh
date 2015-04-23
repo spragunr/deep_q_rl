@@ -5,14 +5,8 @@ echo "==>dependencies setup for deep_q_rl"
 echo "==>updating current package..."
 #sudo apt-get update
 
-if [ ! -d "./cython" ]
-then
-echo "==>installing Cython ..."
-git clone https://github.com/cython/cython
-fi
-cd ./cython
-sudo python setup.py install
-cd ..
+echo "==>installing Cython..."
+sudo apt-get install cython
 
 echo "==>installing Theano ..."
 # some dependencies ...
@@ -42,9 +36,15 @@ sudo make
 sudo cp ./ale /usr/bin
 cd ..
 
+
+echo "==>installing rlglue3.04..."
+
+
+
+
 if [ ! -d "./rlglue-py" ]
 then
-echo "==>installing rlglue-py ..."
+echo "==>installing rlglue-python-codec ..."
 git clone https://github.com/ctn-waterloo/rlglue-py
 fi
 cd ./rlglue-py
