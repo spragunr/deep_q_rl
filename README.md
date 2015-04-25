@@ -36,12 +36,7 @@ Here is a video showing a trained network playing breakout:
 
 # Running
 
-Use the script `ale_run.py` to start all the necessary processes:
-
-`$ python ale_run.py --exp_pref data`
-
-For those with no GPU, you can:
-set USE_GPU=0 in dqn_run.sh ,then 
+For those with no GPU, you can: set USE_GPU=0 in dqn_run.sh ,then 
 `sudo bash dqn_run.sh`
 
 This will store output files in a folder prefixed with `data` in the current
