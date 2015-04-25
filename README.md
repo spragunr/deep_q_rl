@@ -45,8 +45,10 @@ directory.  Pickled version of the network objects are stored after every
 epoch.  The file `results.csv` will contain the testing output.  You can 
 plot the progress by executing `plot_results.py`:
 
-For those with no GPU, you can run:
+For those with no GPU, you can:
+    
 set USE_GPU=0 in dqn_run.sh ,then 
+
 `sudo bash dqn_run.sh`
 
 `$ python plot_results.py data_09-29-15-46_0p0001_0p9/results.csv`
