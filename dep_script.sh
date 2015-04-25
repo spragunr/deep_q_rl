@@ -64,7 +64,7 @@ echo "==>installing OpenCV..."
 sudo apt-get install libgtk2.0-dev pkg-config
 sudo apt-get install build-essential
 sudo apt-get install cmake
-if [ ! -d "opencv-2.4.9" ]
+if [ ! -d "./opencv-2.4.9" ]
 then
 wget http://jaist.dl.sourceforge.net/project/opencvlibrary/opencv-unix/2.4.9/opencv-2.4.9.zip
 unzip -q opencv-2.4.9.zip
