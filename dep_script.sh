@@ -30,7 +30,7 @@ fi
 mv Arcade-Learning-Environment ALE
 cd ./ALE
 #make USE_RLGLUE = 1 in makefile.unix
-sed -i `s/USE_RLGLUE  := 0/USE_RLGLUE  := 1/g` makefile.unix
+sed -i "s/USE_RLGLUE  := 0/USE_RLGLUE  := 1/g" makefile.unix
 cp makefile.unix makefile
 sudo make 
 sudo cp ./ale /usr/bin
