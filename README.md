@@ -37,7 +37,8 @@ Here is a video showing a trained network playing breakout:
 # Running
 
 For those with no GPU, you can: set USE_GPU=0 in dqn_run.sh ,then 
-`sudo bash dqn_run.sh`
+
+`$ bash dqn_run.sh`
 
 This will store output files in a folder prefixed with `data` in the current
 directory.  Pickled version of the network objects are stored after every 
