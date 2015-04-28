@@ -29,9 +29,10 @@ git clone https://github.com/mgbellemare/Arcade-Learning-Environment
 fi
 mv Arcade-Learning-Environment ALE
 cd ./ALE
-#make USE_RLGLUE = 1 in makefile.unix
-sed -i "s/USE_RLGLUE  := 0/USE_RLGLUE  := 1/g" makefile.unix
+#make USE_RLGLUE = 1，USE_SDL = 1in makefile
 cp makefile.unix makefile
+sed -i "s/USE_RLGLUE  := 0/USE_RLGLUE  := 1/g" makefile
+sed -i "s/USE_SDL     := 0/USE_SDL     := 1/g" makefile
 sudo make 
 sudo cp ./ale /usr/bin
 cd ..
