@@ -35,17 +35,13 @@ import theano.tensor as T
 import numpy as np
 
 import layers 
-import os
 
 from theano.sandbox.cuda.basic_ops import gpu_contiguous
 from pylearn2.sandbox.cuda_convnet.filter_acts import FilterActs
 from pylearn2.sandbox.cuda_convnet.pool import MaxPool
 from pylearn2.sandbox.cuda_convnet.stochastic_pool import StochasticMaxPool, WeightedMaxPool
 from pylearn2.sandbox.cuda_convnet.response_norm import CrossMapNorm
-
-cur_env = os.environ.copy();
-if cur_env["USE_GPU"] == '1':
-    from theano.sandbox.cuda import host_from_gpu
+from theano.sandbox.cuda.basic_ops import host_from_gpu
 
 
 class CudaConvnetInput2DLayer(layers.Input2DLayer):

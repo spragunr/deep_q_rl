@@ -191,13 +191,6 @@ class NeuralAgent(Agent):
         A subclass may override this if a different sort
         of network is desired.
         """
-	cur_env = os.environ.copy();
-	approx = '';
-	if cur_env["USE_GPU"] == '1':
-        	approx = 'cuda_conv';
-	else:
-		approx = 'conv';
-		
         return cnn_q_learner.CNNQLearner(self.num_actions,
                                          self.phi_length,
                                          CROPPED_WIDTH,
@@ -207,7 +200,7 @@ class NeuralAgent(Agent):
                                          decay=self.rms_decay,
                                          momentum=self.momentum,
                                          batch_size=self.batch_size,
-                                         approximator=approx)
+                                         approximator='cuda_conv')
         
 
 

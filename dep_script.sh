@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 echo "==>dependencies setup for deep_q_rl"
 
@@ -8,33 +8,32 @@ echo "==>updating current package..."
 echo "==>installing Cython..."
 sudo apt-get install cython
 
+echo "==>installing OpenCV..."
+sudo apt-get install python-opencv
+
+echo "==>installing Matplotlib..."
+sudo apt-get install python-matplotlib python-tk
+
 echo "==>installing Theano ..."
 # some dependencies ...
 sudo apt-get install python-numpy python-scipy python-dev python-pip python-nose g++ libopenblas-dev git
 sudo pip install Theano
 
+
+# Packages below this point require downloads. 
+mkdir build
+cd build
+
 if [ ! -d "./pylearn2" ]
 then
 echo "==>installing Pylearn2 ..."
+# dependencies...
+sudo apt-get install libyaml-0-2
 git clone git://github.com/lisa-lab/pylearn2
 fi
 cd ./pylearn2
-sudo python setup.py build
-cd ..
-
-if [ ! -d "./ALE" ]
-then
-echo "==>installing ALE ..."
-git clone https://github.com/mgbellemare/Arcade-Learning-Environment
-fi
-mv Arcade-Learning-Environment ALE
-cd ./ALE
-#make USE_RLGLUE = 1，USE_SDL = 1in makefile
-cp makefile.unix makefile
-sed -i "s/USE_RLGLUE  := 0/USE_RLGLUE  := 1/g" makefile
-sed -i "s/USE_SDL     := 0/USE_SDL     := 1/g" makefile
-sudo make 
-sudo cp ./ale /usr/bin
+sudo python setup.py develop
+sudo rm -r ~/.theano
 cd ..
 
 
@@ -61,20 +60,26 @@ cd ./rlglue-py
 sudo python setup.py install
 cd ..
 
-echo "==>installing OpenCV..."
-sudo apt-get install libgtk2.0-dev pkg-config
-sudo apt-get install build-essential
-sudo apt-get install cmake
-if [ ! -d "./opencv-2.4.9" ]
+
+if [ ! -d "./ALE" ]
 then
-wget http://jaist.dl.sourceforge.net/project/opencvlibrary/opencv-unix/2.4.9/opencv-2.4.9.zip
-unzip -q opencv-2.4.9.zip
+echo "==>installing ALE ..."
+
+# dependencies ...
+sudo apt-get install  libsdl1.2-dev libsdl-gfx1.2-dev libsdl-image1.2-dev
+
+git clone https://github.com/mgbellemare/Arcade-Learning-Environment
 fi
+mv Arcade-Learning-Environment ALE
+cd ./ALE
+#make USE_RLGLUE = 1 and USE_SDL = 1 in makefile.unix
+sed -i 's/USE_RLGLUE  := 0/USE_RLGLUE  := 1/g' makefile.unix
+sed -i 's/USE_SDL     := 0/USE_SDL     := 1/g' makefile.unix
+cp makefile.unix makefile
+sudo make 
+sudo cp ./ale /usr/bin
+cd ..
 
-cd ./opencv-2.4.9
-cmake .
-sudo make
-sudo make install
 
+echo "==>All done!"
 
-echo "==>All is done!"

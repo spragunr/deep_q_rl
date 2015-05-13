@@ -18,34 +18,31 @@ Here is a video showing a trained network playing breakout:
 
 # Dependencies
 
+
+# Dependencies
+
 * A reasonably modern NVIDIA GPU
 * Cython
 * OpenCV
-* Each of the following should be installed from the master branches on github:
-  * [Theano](http://deeplearning.net/software/theano/) ([https://github.com/Theano/Theano](https://github.com/Theano/Theano))
-  * [Pylearn2](http://deeplearning.net/software/pylearn2/) ([https://github.com/lisa-lab/pylearn2](https://github.com/lisa-lab/pylearn2))
-  * [Arcade Learning Environment](http://www.arcadelearningenvironment.org/) ([https://github.com/mgbellemare/Arcade-Learning-Environment](https://github.com/mgbellemare/Arcade-Learning-Environment))
-     * Make sure that you set the `USE_RLGLUE` flag to 1 in the makefile.
+* [Theano](http://deeplearning.net/software/theano/) ([https://github.com/Theano/Theano](https://github.com/Theano/Theano))
+* [Pylearn2](http://deeplearning.net/software/pylearn2/) ([https://github.com/lisa-lab/pylearn2](https://github.com/lisa-lab/pylearn2))
+* [Arcade Learning Environment](http://www.arcadelearningenvironment.org/) ([https://github.com/mgbellemare/Arcade-Learning-Environment](https://github.com/mgbellemare/Arcade-Learning-Environment))
 * [RL-Glue](http://glue.rl-community.org/wiki/Main_Page)
 * [RL-Glue Python Codec](http://glue.rl-community.org/wiki/Python_Codec)
 
-* For a quick setup, you can run :
-     bash dep_script.sh 
-  to complete above dependencies configuration (test passed on ubuntu14.04)
+The script `dep_script.sh` can be used to install all dependencies under Ubuntu.
 
 
 # Running
 
-For those with no GPU, you can: set USE_GPU=0 in dqn_run.sh ,then 
+Use the script `ale_run.py` to start all the necessary processes:
 
-`$ bash dqn_run.sh`
+`$ python ale_run.py --exp_pref data`
 
 This will store output files in a folder prefixed with `data` in the current
 directory.  Pickled version of the network objects are stored after every 
 epoch.  The file `results.csv` will contain the testing output.  You can 
 plot the progress by executing `plot_results.py`:
-
-
 
 `$ python plot_results.py data_09-29-15-46_0p0001_0p9/results.csv`
 
