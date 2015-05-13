@@ -15,10 +15,6 @@ Here is a video showing a trained network playing breakout:
 
  http://youtu.be/SZ88F82KLX4
 
-
-# Dependencies
-
-
 # Dependencies
 
 * A reasonably modern NVIDIA GPU
