@@ -47,6 +47,7 @@ import matplotlib.pyplot as plt
 import cnn_q_learner
 import ale_data_set
 import theano
+from network import DeepQLearner
 
 import sys
 sys.setrecursionlimit(10000)
@@ -160,7 +161,7 @@ class NeuralAgent(Agent):
         else:
             self.epsilon_rate = 0
             
-
+        self.target_reset_freq = 10000 # target network update frequency
         self.testing = False
 
         if self.nn_file is None:
@@ -172,7 +173,7 @@ class NeuralAgent(Agent):
         self._open_results_file()
         self._open_learning_file()
 
-        self.step_counter = 0
+        self.total_steps = 0
         self.episode_counter = 0
         self.batch_counter = 0
 
@@ -187,6 +188,7 @@ class NeuralAgent(Agent):
 
 
     def _init_network(self):
+        return DeepQLearner(CROPPED_WIDTH, CROPPED_HEIGHT, self.num_actions, self.phi_length, self.batch_size)
         """
         A subclass may override this if a different sort
         of network is desired.
@@ -307,9 +309,13 @@ class NeuralAgent(Agent):
         """
 
         self.step_counter += 1
+        self.total_steps += 1
         return_action = Action()
 
         cur_img = self._resize_observation(observation.intArray)
+
+        if self.total_steps % self.target_reset_freq == 0:
+            self.network.reset_q_hat()
 
         #TESTING---------------------------
         if self.testing:
@@ -379,6 +385,7 @@ class NeuralAgent(Agent):
         """
         self.episode_counter += 1
         self.step_counter += 1
+        self.total_steps += 1
         total_time = time.time() - self.start_time
 
         if self.testing:
