@@ -7,7 +7,7 @@ NIPS Deep Learning Workshop 2013
 and
 
 Human-level control through deep reinforcement learning.
-Nature, 518(7540):529–533, February 2015
+Nature, 518(7540):529-533, February 2015
 
 
 Author of Lasagne port: Nissan Pow
