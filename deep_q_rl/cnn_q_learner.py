@@ -57,7 +57,7 @@ class CNNQLearner(object):
     def __init__(self, num_actions, phi_length, width, height,
                  discount, learning_rate, decay, momentum=0,
                  batch_size=32,
-                 approximator='none'):
+                 approximator='none', update_rule='rmsprop'):
         self._batch_size = batch_size
         self._num_input_features = phi_length
         self._phi_length = phi_length
@@ -206,14 +206,19 @@ class CNNQLearner(object):
                                  (self._idx+1)*self._batch_size, :]
              }
 
-        if self.momentum != 0:
-            self._updates = layers.gen_updates_rmsprop_and_nesterov_momentum(\
-                self._loss, self._parameters, learning_rate=self.learning_rate,
-                rho=self.decay, momentum=self.momentum, epsilon=1e-6)
-        else:
-            self._updates = layers.gen_updates_rmsprop(self._loss,
-                self._parameters, learning_rate=self.learning_rate,
-                rho=self.decay, epsilon=1e-6)
+        if update_rule == 'rms_prop':
+            if self.momentum != 0:
+                self._updates = layers.gen_updates_rmsprop_and_nesterov_momentum(\
+                    self._loss, self._parameters, learning_rate=self.learning_rate,
+                    rho=self.decay, momentum=self.momentum, epsilon=1e-6)
+            else:
+                self._updates = layers.gen_updates_rmsprop(self._loss,
+                    self._parameters, learning_rate=self.learning_rate,
+                    rho=self.decay, epsilon=1e-6)
+
+        else: # sgd
+            self._updates = layers.gen_updates_sgd(self._loss,
+                                                   self._parameters, learning_rate=self.learning_rate)
 
         self._train = theano.function([self._idx], self._loss,
                                       givens=self._givens,

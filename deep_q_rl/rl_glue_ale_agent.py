@@ -104,6 +104,11 @@ class NeuralAgent(Agent):
                             help='Pickle file containing trained net.')
         parser.add_argument('--pause', type=float, default=0,
                             help='Amount of time to pause display while testing.')
+        parser.add_argument('--network_type', type=str, default="nips_cuda",
+                            help='nips_cuda|nature_cuda|linear')
+        parser.add_argument('--freeze_interval', type=int, default=-1,
+                            help='Interval between target freezes.')
+                            
         # Create instance variables directy from the arguments:
         parser.parse_known_args(namespace=self)
 
@@ -161,7 +166,7 @@ class NeuralAgent(Agent):
         else:
             self.epsilon_rate = 0
             
-        self.target_reset_freq = 10000 # target network update frequency
+        #self.target_reset_freq = 10000 # target network update frequency
         self.testing = False
 
         if self.nn_file is None:
@@ -173,7 +178,6 @@ class NeuralAgent(Agent):
         self._open_results_file()
         self._open_learning_file()
 
-        self.total_steps = 0
         self.episode_counter = 0
         self.batch_counter = 0
 
@@ -188,22 +192,22 @@ class NeuralAgent(Agent):
 
 
     def _init_network(self):
-        return DeepQLearner(CROPPED_WIDTH, CROPPED_HEIGHT, self.num_actions, self.phi_length, self.batch_size)
         """
         A subclass may override this if a different sort
         of network is desired.
         """
-        return cnn_q_learner.CNNQLearner(self.num_actions,
-                                         self.phi_length,
-                                         CROPPED_WIDTH,
-                                         CROPPED_HEIGHT,
-                                         discount=self.discount,
-                                         learning_rate=self.learning_rate,
-                                         decay=self.rms_decay,
-                                         momentum=self.momentum,
-                                         batch_size=self.batch_size,
-                                         approximator='cuda_conv')
-        
+        return DeepQLearner(CROPPED_WIDTH, 
+                            CROPPED_HEIGHT, 
+                            self.num_actions, 
+                            self.phi_length, 
+                            self.discount,
+                            self.learning_rate,
+                            self.rms_decay,
+                            self.momentum,
+                            self.freeze_interval,  # Freeze interval
+                            self.batch_size,
+                            self.network_type)
+
 
 
     def _open_results_file(self):
@@ -286,7 +290,7 @@ class NeuralAgent(Agent):
                                   IMAGE_WIDTH))
 
         resized = cv2.resize(greyscaled, (resize_width, resize_height),
-        interpolation=cv2.INTER_LINEAR)
+                             interpolation=cv2.INTER_LINEAR)
 
         # Crop the part we want
         crop_y_cutoff = resize_height - CROP_OFFSET - CROPPED_HEIGHT
@@ -309,13 +313,9 @@ class NeuralAgent(Agent):
         """
 
         self.step_counter += 1
-        self.total_steps += 1
         return_action = Action()
 
         cur_img = self._resize_observation(observation.intArray)
-
-        if self.total_steps % self.target_reset_freq == 0:
-            self.network.reset_q_hat()
 
         #TESTING---------------------------
         if self.testing:
@@ -385,7 +385,6 @@ class NeuralAgent(Agent):
         """
         self.episode_counter += 1
         self.step_counter += 1
-        self.total_steps += 1
         total_time = time.time() - self.start_time
 
         if self.testing:

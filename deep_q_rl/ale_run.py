@@ -36,7 +36,7 @@ def main(args):
                         action="store_true",
                         help='Tell ALE to send the averaged frames')
     parser.add_argument('--display-screen', dest="display_screen", 
-                        action='store_true', default=True,
+                        action='store_true', default=False,
                         help='Show the game screen.')
     parser.add_argument('--experiment-prefix', dest="experiment_prefix",
                         default=None,
