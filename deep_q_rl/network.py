@@ -196,8 +196,6 @@ class DeepQLearner:
             shape=(batch_size, num_frames, input_width, input_height)
         )
 
-        l_in = cuda_convnet.bc01_to_c01b(l_in)
-
         l_conv1 = cuda_convnet.Conv2DCCLayer(
             l_in,
             num_filters=32,
@@ -206,7 +204,7 @@ class DeepQLearner:
             nonlinearity=lasagne.nonlinearities.rectify,
             W=lasagne.init.Uniform(0.01),
             b=lasagne.init.Constant(0.1),
-            dimshuffle=False
+            dimshuffle=True
         )
 
         l_conv2 = cuda_convnet.Conv2DCCLayer(
@@ -217,7 +215,7 @@ class DeepQLearner:
             nonlinearity=lasagne.nonlinearities.rectify,
             W=lasagne.init.Uniform(0.01),
             b=lasagne.init.Constant(0.1),
-            dimshuffle=False
+            dimshuffle=True
         )
 
         l_conv3 = cuda_convnet.Conv2DCCLayer(
@@ -228,10 +226,8 @@ class DeepQLearner:
             nonlinearity=lasagne.nonlinearities.rectify,
             W=lasagne.init.Uniform(0.01),
             b=lasagne.init.Constant(0.1),
-            dimshuffle=False
+            dimshuffle=True
         )
-
-        l_conv3 = cuda_convnet.c01b_to_bc01(l_conv3)
 
         l_hidden1 = lasagne.layers.DenseLayer(
             l_conv3,
@@ -262,8 +258,6 @@ class DeepQLearner:
             shape=(batch_size, num_frames, input_width, input_height)
         )
 
-        l_in = cuda_convnet.bc01_to_c01b(l_in)
-
         l_conv1 = cuda_convnet.Conv2DCCLayer(
             l_in,
             num_filters=16,
@@ -272,7 +266,7 @@ class DeepQLearner:
             nonlinearity=lasagne.nonlinearities.rectify,
             W=lasagne.init.Uniform(0.01),
             b=lasagne.init.Constant(0.1),
-            dimshuffle=False
+            dimshuffle=True
         )
 
         l_conv2 = cuda_convnet.Conv2DCCLayer(
@@ -283,10 +277,8 @@ class DeepQLearner:
             nonlinearity=lasagne.nonlinearities.rectify,
             W=lasagne.init.Uniform(0.01),
             b=lasagne.init.Constant(0.1),
-            dimshuffle=False
+            dimshuffle=True
         )
-
-        l_conv2 = cuda_convnet.c01b_to_bc01(l_conv2)
 
         l_hidden1 = lasagne.layers.DenseLayer(
             l_conv2,
@@ -320,7 +312,7 @@ class DeepQLearner:
         )
 
 
-        l_conv1 = dnn.Conv2DCCLayer(
+        l_conv1 = dnn.Conv2DDNNLayer(
             l_in,
             num_filters=16,
             filter_size=(8, 8),
@@ -330,7 +322,7 @@ class DeepQLearner:
             b=lasagne.init.Constant(0.1),
         )
 
-        l_conv2 = dnn.Conv2DCCLayer(
+        l_conv2 = dnn.Conv2DDNNLayer(
             l_conv1,
             num_filters=32,
             filter_size=(4, 4),
