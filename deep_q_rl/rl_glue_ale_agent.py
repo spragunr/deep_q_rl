@@ -71,7 +71,8 @@ class NeuralAgent(Agent):
     def __init__(self, discount, learning_rate, rms_decay, momentum,
                  epsilon_start, epsilon_min, epsilon_decay,
                  phi_length, replay_memory_size, exp_pref, nn_file,
-                 pause, network_type, freeze_interval, batch_size):
+                 pause, network_type, freeze_interval, batch_size,
+                 replay_start_size, update_frequency):
 
         self.discount = discount
         self.learning_rate = learning_rate
@@ -88,6 +89,9 @@ class NeuralAgent(Agent):
         self.network_type = network_type
         self.freeze_interval = freeze_interval
         self.batch_size = batch_size
+        self.replay_start_size = replay_start_size
+        self.update_frequency = update_frequency
+        self.image_resize = 'scale'
 
         # CREATE A FOLDER TO HOLD RESULTS
         time_str = time.strftime("_%m-%d-%H-%M_", time.gmtime())
@@ -254,7 +258,7 @@ class NeuralAgent(Agent):
         plt.show()
 
     def _resize_observation(self, observation):
-        # reshape linear to original image size, skipping the RAM bit
+        # reshape linear to original image size, skipping the RAM portion
         image = observation[128:].reshape(IMAGE_HEIGHT, IMAGE_WIDTH, 3)
         # convert from int32s
         image = np.array(image, dtype="uint8")
@@ -262,19 +266,25 @@ class NeuralAgent(Agent):
         # convert to greyscale
         greyscaled = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
-        # resize keeping aspect ratio
-        resize_width = CROPPED_WIDTH
-        resize_height = int(round(float(IMAGE_HEIGHT) * CROPPED_HEIGHT / 
-                                  IMAGE_WIDTH))
+        if self.image_resize == 'crop':
+            # resize keeping aspect ratio
+            resize_width = CROPPED_WIDTH
+            resize_height = int(round(float(IMAGE_HEIGHT) * CROPPED_HEIGHT /
+                                      IMAGE_WIDTH))
 
-        resized = cv2.resize(greyscaled, (resize_width, resize_height),
-                             interpolation=cv2.INTER_LINEAR)
+            resized = cv2.resize(greyscaled, (resize_width, resize_height),
+                                 interpolation=cv2.INTER_LINEAR)
 
-        # Crop the part we want
-        crop_y_cutoff = resize_height - CROP_OFFSET - CROPPED_HEIGHT
-        cropped = resized[crop_y_cutoff:crop_y_cutoff + CROPPED_HEIGHT, :]
+            # Crop the part we want
+            crop_y_cutoff = resize_height - CROP_OFFSET - CROPPED_HEIGHT
+            cropped = resized[crop_y_cutoff:crop_y_cutoff + CROPPED_HEIGHT, :]
 
-        return cropped
+            return cropped
+        elif self.image_resize == 'scale':
+            return cv2.resize(greyscaled, (CROPPED_WIDTH, CROPPED_HEIGHT),
+                              interpolation=cv2.INTER_LINEAR)
+        else:
+            raise ValueError('Unrecognized image resize method.')
 
 
     def agent_step(self, reward, observation):
@@ -305,16 +315,24 @@ class NeuralAgent(Agent):
 
         #NOT TESTING---------------------------
         else:
-            self.epsilon = max(self.epsilon_min, 
-                               self.epsilon - self.epsilon_rate)
 
-            int_action = self._choose_action(self.data_set, self.epsilon,
-                                             cur_img, np.clip(reward, -1, 1))
+            if len(self.data_set) > self.replay_start_size:
+                self.epsilon = max(self.epsilon_min,
+                                   self.epsilon - self.epsilon_rate)
 
-            if len(self.data_set) > self.batch_size:
-                loss = self._do_training()
-                self.batch_counter += 1
-                self.loss_averages.append(loss)
+                int_action = self._choose_action(self.data_set, self.epsilon,
+                                                 cur_img,
+                                                 np.clip(reward, -1, 1))
+
+                if self.step_counter % self.update_frequency == 0:
+                    loss = self._do_training()
+                    self.batch_counter += 1
+                    self.loss_averages.append(loss)
+
+            else: # Still gathering initial random data...
+                int_action = self._choose_action(self.data_set, 1.0,
+                                                 cur_img,
+                                                 np.clip(reward, -1, 1))
 
         return_action.intArray = [int_action]
 
@@ -337,6 +355,7 @@ class NeuralAgent(Agent):
             int_action = self.network.choose_action(phi, epsilon)
         else:
             int_action = self.randGenerator.randint(0, self.num_actions - 1)
+
         return int_action
 
     def _do_training(self):
@@ -368,18 +387,21 @@ class NeuralAgent(Agent):
         if self.testing:
             self.total_reward += reward
         else:
-            logging.info(
-                "Batches/second: {:.2f}  Average loss: {:.4f}".format(\
-                    self.batch_counter/total_time,
-                    np.mean(self.loss_averages)))
-
-            self._update_learning_file()
 
             # Store the latest sample.
             self.data_set.add_sample(self.last_img,
                                      self.last_action.intArray[0],
                                      np.clip(reward, -1, 1),
                                      True)
+
+            if self.batch_counter > 0:
+                logging.info(
+                    "Batches/second: {:.2f}  Average loss: {:.4f}".format(\
+                            self.batch_counter/total_time,
+                            np.mean(self.loss_averages)))
+
+                self._update_learning_file()
+
 
 
     def agent_cleanup(self):
