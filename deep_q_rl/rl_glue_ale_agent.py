@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 This uses the skeleton_agent.py file from the Python-codec of rl-glue
 as a starting point.
@@ -35,6 +34,7 @@ from rlglue.types import Action
 from rlglue.types import Observation
 from rlglue.utils import TaskSpecVRLGLUE3
 import time
+import logging
 
 import random
 import numpy as np
@@ -44,7 +44,6 @@ import argparse
 
 import matplotlib.pyplot as plt
 
-import cnn_q_learner
 import ale_data_set
 import theano
 from network import DeepQLearner
@@ -69,48 +68,26 @@ CROP_OFFSET = 8
 class NeuralAgent(Agent):
     randGenerator=random.Random()
 
-    def __init__(self):
-        """
-        Mostly just read command line arguments here. We do this here
-        instead of agent_init to make it possible to use --help from
-        the command line without starting an experiment.
-        """
+    def __init__(self, discount, learning_rate, rms_decay, momentum,
+                 epsilon_start, epsilon_min, epsilon_decay,
+                 phi_length, replay_memory_size, exp_pref, nn_file,
+                 pause, network_type, freeze_interval, batch_size):
 
-        # Handle command line argument:
-        parser = argparse.ArgumentParser(description='Neural rl agent.')
-        parser.add_argument('--learning_rate', type=float, default=.0002,
-                            help='Learning rate')
-        parser.add_argument('--rms_decay', type=float, default=.99,
-                            help='Decay rate for rms_prop')
-        parser.add_argument('--momentum', type=float, default=0,
-                            help='Momentum term for Nesterov momentum.')
-        parser.add_argument('--discount', type=float, default=.95,
-                            help='Discount rate')
-        parser.add_argument('--epsilon_start', type=float, default=1.0,
-                            help='Starting value for epsilon.')
-        parser.add_argument('--epsilon_min', type=float, default=0.1,
-                            help='Minimum epsilon.')
-        parser.add_argument('--epsilon_decay', type=float, default=1000000,
-                            help='Number of steps to minimum epsilon.')
-        parser.add_argument('--phi_length', type=int, default=4,
-                            help='History length')
-        parser.add_argument('--max_history', type=int, default=1000000,
-                            help='Maximum number of steps stored')
-        parser.add_argument('--batch_size', type=int, default=32,
-                            help='Batch size')
-        parser.add_argument('--exp_pref', type=str, default="",
-                            help='Experiment name prefix')
-        parser.add_argument('--nn_file', type=str, default=None,
-                            help='Pickle file containing trained net.')
-        parser.add_argument('--pause', type=float, default=0,
-                            help='Amount of time to pause display while testing.')
-        parser.add_argument('--network_type', type=str, default="nips_cuda",
-                            help='nips_cuda|nature_cuda|linear')
-        parser.add_argument('--freeze_interval', type=int, default=-1,
-                            help='Interval between target freezes.')
-                            
-        # Create instance variables directy from the arguments:
-        parser.parse_known_args(namespace=self)
+        self.discount = discount
+        self.learning_rate = learning_rate
+        self.rms_decay = rms_decay
+        self.momentum = momentum
+        self.epsilon_start = epsilon_start
+        self.epsilon_min = epsilon_min
+        self.epsilon_decay = epsilon_decay
+        self.phi_length = phi_length
+        self.replay_memory_size = replay_memory_size
+        self.exp_pref = exp_pref
+        self.nn_file = nn_file
+        self.pause = pause
+        self.network_type = network_type
+        self.freeze_interval = freeze_interval
+        self.batch_size = batch_size
 
         # CREATE A FOLDER TO HOLD RESULTS
         time_str = time.strftime("_%m-%d-%H-%M_", time.gmtime())
@@ -148,11 +125,11 @@ class NeuralAgent(Agent):
                 " expecting max action to be a number not a special value"
             self.num_actions = TaskSpec.getIntActions()[0][1]+1
         else:
-            print "INVALID TASK SPEC"
+            logging.error("INVALID TASK SPEC")
 
         self.data_set = ale_data_set.DataSet(width=CROPPED_WIDTH,
                                              height=CROPPED_HEIGHT,
-                                             max_steps=self.max_history,
+                                             max_steps=self.replay_memory_size,
                                              phi_length=self.phi_length)
 
         # just needs to be big enough to create phi's
@@ -162,7 +139,8 @@ class NeuralAgent(Agent):
                                                   phi_length=self.phi_length)
         self.epsilon = self.epsilon_start
         if self.epsilon_decay != 0:
-            self.epsilon_rate = .9 / self.epsilon_decay
+            self.epsilon_rate = ((self.epsilon_start - self.epsilon_min) /
+                                 self.epsilon_decay)
         else:
             self.epsilon_rate = 0
             
@@ -204,14 +182,14 @@ class NeuralAgent(Agent):
                             self.learning_rate,
                             self.rms_decay,
                             self.momentum,
-                            self.freeze_interval,  # Freeze interval
+                            self.freeze_interval,
                             self.batch_size,
                             self.network_type)
 
 
 
     def _open_results_file(self):
-        print "OPENING ", self.exp_dir + '/results.csv'
+        logging.info("OPENING " + self.exp_dir + '/results.csv')
         self.results_file = open(self.exp_dir + '/results.csv', 'w', 0)
         self.results_file.write(\
             'epoch,num_episodes,total_reward,reward_per_epoch,mean_q\n')
@@ -390,9 +368,10 @@ class NeuralAgent(Agent):
         if self.testing:
             self.total_reward += reward
         else:
-            print "Simulated at a rate of {}/s \n Average loss: {}".format(\
-                self.batch_counter/total_time,
-                np.mean(self.loss_averages))
+            logging.info(
+                "Batches/second: {:.2f}  Average loss: {:.4f}".format(\
+                    self.batch_counter/total_time,
+                    np.mean(self.loss_averages)))
 
             self._update_learning_file()
 

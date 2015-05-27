@@ -106,7 +106,7 @@ class DeepQLearner:
 
         if update_rule == 'rmsprop':
             updates = lasagne.updates.rmsprop(loss, params, self.lr, self.rho,
-                                              1e-6)
+                                              .01)
         elif update_rule == 'sgd':
             updates = lasagne.updates.sgd(loss, params, self.lr)
         else:
@@ -126,6 +126,10 @@ class DeepQLearner:
         if network_type == "nature_cuda":
             return self.build_nature_network(input_width, input_height,
                                              output_dim, num_frames, batch_size)
+        if network_type == "nature_dnn":
+            return self.build_nature_network_dnn(input_width, input_height,
+                                                 output_dim, num_frames,
+                                                 batch_size)
         elif network_type == "nips_cuda":
             return self.build_nips_network(input_width, input_height,
                                            output_dim, num_frames, batch_size)
@@ -243,6 +247,66 @@ class DeepQLearner:
             nonlinearity=None,
             W=lasagne.init.Uniform(0.01),
             b=lasagne.init.Constant(0.1)
+        )
+
+        return l_out
+
+
+    def build_nature_network_dnn(self, input_width, input_height, output_dim,
+                                 num_frames, batch_size):
+        """
+        Build a large network consistent with the DeepMind Nature paper.
+        """
+        from lasagne.layers import dnn
+
+        l_in = lasagne.layers.InputLayer(
+            shape=(batch_size, num_frames, input_width, input_height)
+        )
+
+        l_conv1 = dnn.Conv2DDNNLayer(
+            l_in,
+            num_filters=32,
+            filter_size=(8, 8),
+            stride=(4, 4),
+            nonlinearity=lasagne.nonlinearities.rectify,
+            #W=lasagne.init.Uniform(0.01),
+            #b=lasagne.init.Constant(0.1),
+        )
+
+        l_conv2 = dnn.Conv2DDNNLayer(
+            l_conv1,
+            num_filters=64,
+            filter_size=(4, 4),
+            stride=(2, 2),
+            nonlinearity=lasagne.nonlinearities.rectify,
+            #W=lasagne.init.Uniform(0.01),
+            #b=lasagne.init.Constant(0.1),
+        )
+
+        l_conv3 = dnn.Conv2DDNNLayer(
+            l_conv2,
+            num_filters=64,
+            filter_size=(3, 3),
+            stride=(1, 1),
+            nonlinearity=lasagne.nonlinearities.rectify,
+            #W=lasagne.init.Uniform(0.01),
+            #b=lasagne.init.Constant(0.1),
+        )
+
+        l_hidden1 = lasagne.layers.DenseLayer(
+            l_conv3,
+            num_units=512,
+            nonlinearity=lasagne.nonlinearities.rectify,
+            #W=lasagne.init.Uniform(0.01),
+            #b=lasagne.init.Constant(0.1)
+        )
+
+        l_out = lasagne.layers.DenseLayer(
+            l_hidden1,
+            num_units=output_dim,
+            nonlinearity=None,
+            #W=lasagne.init.Uniform(0.01),
+            #b=lasagne.init.Constant(0.1)
         )
 
         return l_out
