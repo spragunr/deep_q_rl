@@ -1,6 +1,8 @@
 """ Utility to plot the first layer of convolutions learned by
 the Deep q-network.
 
+(Assumes cuda_convnet layers)
+
 Usage:
 
 plot_filters.py PICKLED_NN_FILE
@@ -9,11 +11,13 @@ plot_filters.py PICKLED_NN_FILE
 import sys
 import matplotlib.pyplot as plt
 import cPickle
+import lasagne.layers
 
 net_file = open(sys.argv[1], 'r')
 network = cPickle.load(net_file)
 print network
-w = network.q_layers[2].W.get_value()
+q_layers = lasagne.layers.get_all_layers(network.l_out)
+w = q_layers[1].W.get_value()
 count = 1
 for f in range(w.shape[3]):
     for c in range(w.shape[0]):

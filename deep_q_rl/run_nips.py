@@ -1,4 +1,12 @@
 #! /usr/bin/env python
+"""
+Execute a training run of deep-Q-Leaning with parameters that
+are consistent with:
+
+Playing Atari with Deep Reinforcement Learning
+NIPS Deep Learning Workshop 2013
+
+"""
 
 import launcher
 import sys
@@ -34,13 +42,14 @@ class Defaults:
     EPSILON_MIN = .1
     EPSILON_DECAY = 1000000
     PHI_LENGTH = 4
-    UPDATE_FREQUENCY = 1 # Not yet used.
+    UPDATE_FREQUENCY = 1
     REPLAY_MEMORY_SIZE = 1000000
     BATCH_SIZE = 32
-    NETWORK_TYPE="nips_cuda"
+    NETWORK_TYPE = "nips_cuda"
     FREEZE_INTERVAL = -1
-    REPLAY_START_SIZE = 0 # Not yet used
+    REPLAY_START_SIZE = 0
+    IMAGE_RESIZE = 'crop'
 
 
 if __name__ == "__main__":
-    launcher.launch(sys.argv[1:], Defaults)
+    launcher.launch(sys.argv[1:], Defaults, __doc__)

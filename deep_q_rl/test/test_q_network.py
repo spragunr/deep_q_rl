@@ -9,7 +9,7 @@ import theano
 import unittest
 import numpy.testing
 
-import network
+import q_network
 
 class ChainMDP(object):
     """Simple markov chain style MDP.  Three "rooms" and one absorbing
@@ -111,7 +111,7 @@ class LinearTests(unittest.TestCase):
 
     def test_updates_sgd_no_freeze(self):
         freeze_interval = -1
-        net = network.DeepQLearner(self.mdp.num_states, 1, 
+        net = q_network.DeepQLearner(self.mdp.num_states, 1,
                                      self.mdp.num_actions, 1, 
                                      self.discount, self.learning_rate, 0, 0, 
                                      freeze_interval, 1, 
@@ -152,7 +152,7 @@ class LinearTests(unittest.TestCase):
 
     def test_convergence_sgd_no_freeze(self):
         freeze_interval = -1
-        net = network.DeepQLearner(self.mdp.num_states, 1, 
+        net = q_network.DeepQLearner(self.mdp.num_states, 1,
                                      self.mdp.num_actions, 1, 
                                      self.discount, self.learning_rate, 0, 0, 
                                      freeze_interval, 1, 
@@ -168,7 +168,7 @@ class LinearTests(unittest.TestCase):
 
     def test_convergence_sgd_permanent_freeze(self):
         freeze_interval = 1000000
-        net = network.DeepQLearner(self.mdp.num_states, 1, 
+        net = q_network.DeepQLearner(self.mdp.num_states, 1,
                                      self.mdp.num_actions, 1, 
                                      self.discount, self.learning_rate, 0, 0, 
                                      freeze_interval, 1, 
@@ -182,7 +182,7 @@ class LinearTests(unittest.TestCase):
 
     def test_convergence_sgd_frequent_freeze(self):
         freeze_interval = 2
-        net = network.DeepQLearner(self.mdp.num_states, 1, 
+        net = q_network.DeepQLearner(self.mdp.num_states, 1,
                                      self.mdp.num_actions, 1, 
                                      self.discount, self.learning_rate, 0, 0, 
                                      freeze_interval, 1, 
@@ -196,7 +196,7 @@ class LinearTests(unittest.TestCase):
 
     def test_convergence_sgd_one_freeze(self):
         freeze_interval = 500
-        net = network.DeepQLearner(self.mdp.num_states, 1, 
+        net = q_network.DeepQLearner(self.mdp.num_states, 1,
                                      self.mdp.num_actions, 1, 
                                      self.discount, self.learning_rate, 0, 0, 
                                      freeze_interval, 1, 

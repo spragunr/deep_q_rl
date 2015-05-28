@@ -46,7 +46,7 @@ import matplotlib.pyplot as plt
 
 import ale_data_set
 import theano
-from network import DeepQLearner
+from q_network import DeepQLearner
 
 import sys
 sys.setrecursionlimit(10000)
@@ -72,7 +72,7 @@ class NeuralAgent(Agent):
                  epsilon_start, epsilon_min, epsilon_decay,
                  phi_length, replay_memory_size, exp_pref, nn_file,
                  pause, network_type, freeze_interval, batch_size,
-                 replay_start_size, update_frequency):
+                 replay_start_size, update_frequency, image_resize):
 
         self.discount = discount
         self.learning_rate = learning_rate
@@ -91,7 +91,7 @@ class NeuralAgent(Agent):
         self.batch_size = batch_size
         self.replay_start_size = replay_start_size
         self.update_frequency = update_frequency
-        self.image_resize = 'scale'
+        self.image_resize = image_resize
 
         # CREATE A FOLDER TO HOLD RESULTS
         time_str = time.strftime("_%m-%d-%H-%M_", time.gmtime())
@@ -394,14 +394,13 @@ class NeuralAgent(Agent):
                                      np.clip(reward, -1, 1),
                                      True)
 
+            logging.info("steps/second: {:.2f}".format(\
+                            self.step_counter/total_time))
+
             if self.batch_counter > 0:
-                logging.info(
-                    "Batches/second: {:.2f}  Average loss: {:.4f}".format(\
-                            self.batch_counter/total_time,
-                            np.mean(self.loss_averages)))
-
                 self._update_learning_file()
-
+                logging.info("average loss: {:.4f}".format(\
+                                np.mean(self.loss_averages)))
 
 
     def agent_cleanup(self):
