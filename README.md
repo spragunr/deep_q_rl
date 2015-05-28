@@ -1,17 +1,17 @@
 # Introduction 
 
-This package provides a Theano-based implementation of the deep
+This package provides a Lasagne/Theano-based implementation of the deep
 Q-learning algorithm described in:
 
 [Playing Atari with Deep Reinforcement Learning](http://arxiv.org/abs/1312.5602)
 Volodymyr Mnih, Koray Kavukcuoglu, David Silver, Alex Graves, Ioannis
 Antonoglou, Daan Wierstra, Martin Riedmiller
 
-The neural network code is largely borrowed from [Sander Dieleman's
-solution for the Galaxy Zoo Kaggle
-challenge](http://benanne.github.io/2014/04/05/galaxy-zoo.html).
+and 
 
-Here is a video showing a trained network playing breakout:
+Mnih, Volodymyr, et al. "Human-level control through deep reinforcement learning." Nature 518.7540 (2015): 529-533.
+
+Here is a video showing a trained network playing breakout (using an earlier version of the code):
 
  http://youtu.be/SZ88F82KLX4
 
@@ -21,6 +21,7 @@ Here is a video showing a trained network playing breakout:
 * Cython
 * OpenCV
 * [Theano](http://deeplearning.net/software/theano/) ([https://github.com/Theano/Theano](https://github.com/Theano/Theano))
+* [Lasagne](http://lasagne.readthedocs.org/en/latest/) ([https://github.com/Lasagne/Lasagne](https://github.com/Lasagne/Lasagne)
 * [Pylearn2](http://deeplearning.net/software/pylearn2/) ([https://github.com/lisa-lab/pylearn2](https://github.com/lisa-lab/pylearn2))
 * [Arcade Learning Environment](http://www.arcadelearningenvironment.org/) ([https://github.com/mgbellemare/Arcade-Learning-Environment](https://github.com/mgbellemare/Arcade-Learning-Environment))
 * [RL-Glue](http://glue.rl-community.org/wiki/Main_Page)
@@ -31,21 +32,29 @@ The script `dep_script.sh` can be used to install all dependencies under Ubuntu.
 
 # Running
 
-Use the script `ale_run.py` to start all the necessary processes:
+Use the scripts `run_nips.py` or `run_nature.py` to start all the necessary processes:
 
-`$ python ale_run.py --exp_pref data`
+`$ ./run_nips.py --rom breakout`
 
-This will store output files in a folder prefixed with `data` in the current
-directory.  Pickled version of the network objects are stored after every 
-epoch.  The file `results.csv` will contain the testing output.  You can 
-plot the progress by executing `plot_results.py`:
+`$ ./run_nature.py --rom breakout`
 
-`$ python plot_results.py data_09-29-15-46_0p0001_0p9/results.csv`
+The `run_nips.py` script uses parameters consistent with the original
+NIPS workshop paper.  This code should take 2-4 days to complete.  The
+`run_nature.py` script uses parameters consistent with the Nature
+paper.  The final policies should be better, but it will take a few
+weeks to finish training.
 
-After a couple of days, you can watch the trained network play using the 
+Either script will store output files in a folder prefixed with the
+name of the ROM.  Pickled version of the network objects are stored
+after every epoch.  The file `results.csv` will contain the testing
+output.  You can plot the progress by executing `plot_results.py`:
+
+`$ python plot_results.py breakout_05-28-17-09_0p00025_0p99/results.csv`
+
+After training completes, you can watch the network play using the 
 `ale_run_watch.py` script: 
 
-`$ python ale_run_watch.py data_09-29-15-46_0p0001_0p9/network_file_99.pkl`
+`$ python ale_run_watch.py breakout_05-28-17-09_0p00025_0p99/network_file_99.pkl`
 
 # Getting Help
 
@@ -55,6 +64,12 @@ general and this package in particular.
 
 # See Also
 
+* https://sites.google.com/a/deepmind.com/dqn
+
+  This is the code DeepMind used for the Nature paper.  The license
+  only permits the code to be used for "evaluating and reviewing" the
+  claims made in the paper.
+
 * https://github.com/kristjankorjus/Replicating-DeepMind
 
   This is a work in progress.  Their project is described here: 
@@ -62,11 +77,13 @@ general and this package in particular.
 
 * https://github.com/muupan/dqn-in-the-caffe
 
-  Working Caffe-based implementation.  (I haven't tried it, but there is a video of the agent playing Pong successfully.) 
+  Working Caffe-based implementation.  (I haven't tried it, but there
+  is a video of the agent playing Pong successfully.)
 
 * https://github.com/brian473/neural_rl
 
-  This is an almost-working implementation developed last spring by my
-  student Brian Brown.  I haven't reused his code, but Brian and I
-  worked together to puzzle through some of the blank areas of the
-  original paper.
+  This is an almost-working implementation developed during Spring
+  2014 by my student Brian Brown.  I haven't reused his code, but
+  Brian and I worked together to puzzle through some of the blank
+  areas of the original paper.
+

@@ -69,7 +69,6 @@ echo "==>installing ALE ..."
 sudo apt-get install  libsdl1.2-dev libsdl-gfx1.2-dev libsdl-image1.2-dev
 
 git clone https://github.com/mgbellemare/Arcade-Learning-Environment
-fi
 mv Arcade-Learning-Environment ALE
 cd ./ALE
 #make USE_RLGLUE = 1 and USE_SDL = 1 in makefile.unix
@@ -79,7 +78,16 @@ cp makefile.unix makefile
 sudo make 
 sudo cp ./ale /usr/bin
 cd ..
+fi
 
+if [ ! -d "./Lasagne" ]
+then
+echo "==>installing Lasagne ..."
+
+git clone https://github.com/Lasagne/Lasagne.git
+cd ./Lasagne
+python setup.py install
+fi
 
 echo "==>All done!"
 
