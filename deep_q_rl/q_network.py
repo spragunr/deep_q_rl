@@ -113,7 +113,7 @@ class DeepQLearner:
             raise ValueError("Unrecognized update: {}".format(update_rule))
 
         if self.momentum > 0:
-            updates = lasagne.updates.apply_nesterov_momentum(updates, None,
+            updates = lasagne.updates.apply_momentum(updates, None,
                                                               self.momentum)
 
         self._train = theano.function([], [loss, q_vals], updates=updates,
@@ -206,8 +206,8 @@ class DeepQLearner:
             filter_size=(8, 8),
             stride=(4, 4),
             nonlinearity=lasagne.nonlinearities.rectify,
-            W=None, # Defaults to Glorot
-            b=lasagne.init.Uniform(.1),
+            W=lasagne.init.HeUniform(c01b=True), # Defaults to Glorot
+            b=lasagne.init.Constant(.1),
             dimshuffle=True
         )
 
@@ -217,8 +217,8 @@ class DeepQLearner:
             filter_size=(4, 4),
             stride=(2, 2),
             nonlinearity=lasagne.nonlinearities.rectify,
-            W=None,
-            b=lasagne.init.Uniform(.1),
+            W=lasagne.init.HeUniform(c01b=True),
+            b=lasagne.init.Constant(.1),
             dimshuffle=True
         )
 
@@ -228,8 +228,8 @@ class DeepQLearner:
             filter_size=(3, 3),
             stride=(1, 1),
             nonlinearity=lasagne.nonlinearities.rectify,
-            W=None,
-            b=lasagne.init.Uniform(.1),
+            W=lasagne.init.HeUniform(c01b=True),
+            b=lasagne.init.Constant(.1),
             dimshuffle=True
         )
 
@@ -237,16 +237,16 @@ class DeepQLearner:
             l_conv3,
             num_units=512,
             nonlinearity=lasagne.nonlinearities.rectify,
-            W=lasagne.init.GlorotUniform(),
-            b=lasagne.init.Uniform(.1)
+            W=lasagne.init.HeUniform(),
+            b=lasagne.init.Constant(.1)
         )
 
         l_out = lasagne.layers.DenseLayer(
             l_hidden1,
             num_units=output_dim,
             nonlinearity=None,
-            W=lasagne.init.GlorotUniform(),
-            b=lasagne.init.Uniform(.1)
+            W=lasagne.init.HeUniform(),
+            b=lasagne.init.Constant(.1)
         )
 
         return l_out
@@ -269,8 +269,8 @@ class DeepQLearner:
             filter_size=(8, 8),
             stride=(4, 4),
             nonlinearity=lasagne.nonlinearities.rectify,
-            W=lasagne.init.GlorotUniform(),
-            b=lasagne.init.Uniform(.1)
+            W=lasagne.init.HeUniform(),
+            b=lasagne.init.Constant(.1)
         )
 
         l_conv2 = dnn.Conv2DDNNLayer(
@@ -279,8 +279,8 @@ class DeepQLearner:
             filter_size=(4, 4),
             stride=(2, 2),
             nonlinearity=lasagne.nonlinearities.rectify,
-            W=lasagne.init.GlorotUniform(),
-            b=lasagne.init.Uniform(.1)
+            W=lasagne.init.HeUniform(),
+            b=lasagne.init.Constant(.1)
         )
 
         l_conv3 = dnn.Conv2DDNNLayer(
@@ -289,24 +289,24 @@ class DeepQLearner:
             filter_size=(3, 3),
             stride=(1, 1),
             nonlinearity=lasagne.nonlinearities.rectify,
-            W=lasagne.init.GlorotUniform(),
-            b=lasagne.init.Uniform(.1)
+            W=lasagne.init.HeUniform(),
+            b=lasagne.init.Constant(.1)
         )
 
         l_hidden1 = lasagne.layers.DenseLayer(
             l_conv3,
             num_units=512,
             nonlinearity=lasagne.nonlinearities.rectify,
-            W=lasagne.init.GlorotUniform(),
-            b=lasagne.init.Uniform(.1)
+            W=lasagne.init.HeUniform(),
+            b=lasagne.init.Constant(.1)
         )
 
         l_out = lasagne.layers.DenseLayer(
             l_hidden1,
             num_units=output_dim,
             nonlinearity=None,
-            W=lasagne.init.GlorotUniform(),
-            b=lasagne.init.Uniform(.1)
+            W=lasagne.init.HeUniform(),
+            b=lasagne.init.Constant(.1)
         )
 
         return l_out
@@ -328,8 +328,8 @@ class DeepQLearner:
             filter_size=(8, 8),
             stride=(4, 4),
             nonlinearity=lasagne.nonlinearities.rectify,
-            W=None,
-            b=lasagne.init.Uniform(.1),
+            W=lasagne.init.HeUniform(c01b=True),
+            b=lasagne.init.Constant(.1),
             dimshuffle=True
         )
 
@@ -339,8 +339,8 @@ class DeepQLearner:
             filter_size=(4, 4),
             stride=(2, 2),
             nonlinearity=lasagne.nonlinearities.rectify,
-            W=None,
-            b=lasagne.init.Uniform(.1),
+            W=lasagne.init.HeUniform(c01b=True),
+            b=lasagne.init.Constant(.1),
             dimshuffle=True
         )
 
@@ -348,16 +348,16 @@ class DeepQLearner:
             l_conv2,
             num_units=256,
             nonlinearity=lasagne.nonlinearities.rectify,
-            W=lasagne.init.GlorotUniform(),
-            b=lasagne.init.Uniform(.1)
+            W=lasagne.init.HeUniform(),
+            b=lasagne.init.Constant(.1)
         )
 
         l_out = lasagne.layers.DenseLayer(
             l_hidden1,
             num_units=output_dim,
             nonlinearity=None,
-            W=lasagne.init.GlorotUniform(),
-            b=lasagne.init.Uniform(.1)
+            W=lasagne.init.HeUniform(),
+            b=lasagne.init.Constant(.1)
         )
 
         return l_out
@@ -382,8 +382,8 @@ class DeepQLearner:
             filter_size=(8, 8),
             stride=(4, 4),
             nonlinearity=lasagne.nonlinearities.rectify,
-            W=lasagne.init.GlorotUniform(),
-            b=lasagne.init.Uniform(.1)
+            W=lasagne.init.HeUniform(),
+            b=lasagne.init.Constant(.1)
         )
 
         l_conv2 = dnn.Conv2DDNNLayer(
@@ -392,24 +392,24 @@ class DeepQLearner:
             filter_size=(4, 4),
             stride=(2, 2),
             nonlinearity=lasagne.nonlinearities.rectify,
-            W=lasagne.init.GlorotUniform(),
-            b=lasagne.init.Uniform(.1)
+            W=lasagne.init.HeUniform(),
+            b=lasagne.init.Constant(.1)
         )
 
         l_hidden1 = lasagne.layers.DenseLayer(
             l_conv2,
             num_units=256,
             nonlinearity=lasagne.nonlinearities.rectify,
-            W=lasagne.init.GlorotUniform(),
-            b=lasagne.init.Uniform(.1)
+            W=lasagne.init.HeUniform(),
+            b=lasagne.init.Constant(.1)
         )
 
         l_out = lasagne.layers.DenseLayer(
             l_hidden1,
             num_units=output_dim,
             nonlinearity=None,
-            W=lasagne.init.GlorotUniform(),
-            b=lasagne.init.Uniform(.1)
+            W=lasagne.init.HeUniform(),
+            b=lasagne.init.Constant(.1)
         )
 
         return l_out
