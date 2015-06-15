@@ -37,13 +37,13 @@ class Defaults:
     LEARNING_RATE = .00025
     DISCOUNT = .99
     RMS_DECAY = .95 # (Rho)
-    RMS_EPSILON = .01 
+    RMS_EPSILON = .01
     MOMENTUM = 0 # Note that the "momentum" value mentioned in the Nature
                  # paper is not used in the same way as a traditional momentum
-                 # term.  It is used to track gradient for the purpose of 
+                 # term.  It is used to track gradient for the purpose of
                  # estimating the standard deviation. This package uses
                  # rho/RMS_DECAY to track both the history of the gradient
-                 # and the squared gradient. 
+                 # and the squared gradient.
     EPSILON_START = 1.0
     EPSILON_MIN = .1
     EPSILON_DECAY = 1000000
