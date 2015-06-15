@@ -21,6 +21,7 @@ def launch_rlglue_agent(parameters):
     agent = rl_glue_ale_agent.NeuralAgent(parameters.discount,
                                           parameters.learning_rate,
                                           parameters.rms_decay,
+                                          parameters.rms_epsilon,
                                           parameters.momentum,
                                           parameters.epsilon_start,
                                           parameters.epsilon_min,
@@ -96,6 +97,10 @@ def process_args(args, defaults, description):
     parser.add_argument('--rms-decay', dest="rms_decay",
                         type=float, default=defaults.RMS_DECAY,
                         help='Decay rate for rms_prop (default: %(default)s)')
+    parser.add_argument('--rms-epsilon', dest="rms_epsilon",
+                        type=float, default=defaults.RMS_EPSILON,
+                        help='Denominator epsilson for rms_prop ' +
+                        '(default: %(default)s)')
     parser.add_argument('--momentum', type=float, default=defaults.MOMENTUM,
                         help=('Momentum term for Nesterov momentum. '+
                               '(default: %(default)s)'))

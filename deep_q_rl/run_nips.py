@@ -37,6 +37,7 @@ class Defaults:
     LEARNING_RATE = .0002
     DISCOUNT = .95
     RMS_DECAY = .99 # (Rho)
+    RMS_EPSILON = 1e-6
     MOMENTUM = 0
     EPSILON_START = 1.0
     EPSILON_MIN = .1
@@ -45,9 +46,9 @@ class Defaults:
     UPDATE_FREQUENCY = 1
     REPLAY_MEMORY_SIZE = 1000000
     BATCH_SIZE = 32
-    NETWORK_TYPE = "nips_cuda"
+    NETWORK_TYPE = "nips_dnn"
     FREEZE_INTERVAL = -1
-    REPLAY_START_SIZE = 0
+    REPLAY_START_SIZE = 100
     IMAGE_RESIZE = 'crop'
 
 

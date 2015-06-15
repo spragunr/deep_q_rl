@@ -68,8 +68,8 @@ CROP_OFFSET = 8
 class NeuralAgent(Agent):
     randGenerator=random.Random()
 
-    def __init__(self, discount, learning_rate, rms_decay, momentum,
-                 epsilon_start, epsilon_min, epsilon_decay,
+    def __init__(self, discount, learning_rate, rms_decay, rms_epsilon,
+                 momentum, epsilon_start, epsilon_min, epsilon_decay,
                  phi_length, replay_memory_size, exp_pref, nn_file,
                  pause, network_type, freeze_interval, batch_size,
                  replay_start_size, update_frequency, image_resize):
@@ -77,6 +77,7 @@ class NeuralAgent(Agent):
         self.discount = discount
         self.learning_rate = learning_rate
         self.rms_decay = rms_decay
+        self.rms_epsilon = rms_epsilon
         self.momentum = momentum
         self.epsilon_start = epsilon_start
         self.epsilon_min = epsilon_min
@@ -185,6 +186,7 @@ class NeuralAgent(Agent):
                             self.discount,
                             self.learning_rate,
                             self.rms_decay,
+                            self.rms_epsilon,
                             self.momentum,
                             self.freeze_interval,
                             self.batch_size,
