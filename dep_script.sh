@@ -86,7 +86,7 @@ echo "==>installing Lasagne ..."
 
 git clone https://github.com/Lasagne/Lasagne.git
 cd ./Lasagne
-python setup.py install
+sudo python setup.py install
 fi
 
 echo "==>All done!"
