@@ -34,6 +34,8 @@ class Defaults:
     # ----------------------
     # Agent/Network parameters:
     # ----------------------
+    UPDATE_RULE = 'deepmind_rmsprop'
+    BATCH_ACCUMULATOR = 'sum'
     LEARNING_RATE = .00025
     DISCOUNT = .99
     RMS_DECAY = .95 # (Rho)

@@ -32,6 +32,8 @@ def launch_rlglue_agent(parameters):
                                           parameters.nn_file,
                                           parameters.pause,
                                           parameters.network_type,
+                                          parameters.update_rule,
+                                          parameters.batch_accumulator,
                                           parameters.freeze_interval,
                                           parameters.batch_size,
                                           parameters.replay_start_size,
@@ -91,6 +93,13 @@ def process_args(args, defaults, description):
                         default=defaults.RLGLUE_PORT,
                         help='rlglue port (default: %(default)s)')
 
+    parser.add_argument('--update-rule', dest="update_rule",
+                        type=str, default=defaults.UPDATE_RULE,
+                        help=('deepmind_rmsprop|rmsprop|sgd ' +
+                              '(default: %(default)s)'))
+    parser.add_argument('--batch-accumulator', dest="batch_accumulator",
+                        type=str, default=defaults.BATCH_ACCUMULATOR,
+                        help=('sum|mean (default: %(default)s)'))
     parser.add_argument('--learning-rate', dest="learning_rate",
                         type=float, default=defaults.LEARNING_RATE,
                         help='Learning rate (default: %(default)s)')

@@ -17,9 +17,7 @@ import lasagne
 import numpy as np
 import theano
 import theano.tensor as T
-from lasagne.layers import cuda_convnet
 from updates import deepmind_rmsprop
-
 
 
 class DeepQLearner:
@@ -30,10 +28,7 @@ class DeepQLearner:
     def __init__(self, input_width, input_height, num_actions, num_frames,
                  discount, learning_rate, rho, rms_epsilon, momentum,
                  freeze_interval, batch_size, network_type,
-                 update_rule='deepmind_rmsprop', input_scale=255.0):
-        """
-        Allowed network types: "nature_cuda", "nips_cuda", "linear".
-        """
+                 update_rule, batch_accumulator, input_scale=255.0):
 
         self.input_width = input_width
         self.input_height = input_height
@@ -96,7 +91,13 @@ class DeepQLearner:
                                               keepdims=True)
         diff = target - q_vals[T.arange(batch_size),
                                actions.reshape((-1,))].reshape((-1, 1))
-        loss = T.mean(diff ** 2)
+
+        if batch_accumulator == 'sum':
+            loss = T.sum(diff ** 2)
+        elif batch_accumulator == 'mean':
+            loss = T.mean(diff ** 2)
+        else:
+            raise ValueError("Bad accumulator: {}".format(batch_accumulator))
 
         params = lasagne.layers.helper.get_all_params(self.l_out)
         givens = {
@@ -106,7 +107,6 @@ class DeepQLearner:
             actions: self.actions_shared,
             #terminals: self.terminals_shared
         }
-
         if update_rule == 'deepmind_rmsprop':
             updates = deepmind_rmsprop(loss, params, self.lr, self.rho,
                                                self.rms_epsilon)
@@ -201,6 +201,7 @@ class DeepQLearner:
         """
         Build a large network consistent with the DeepMind Nature paper.
         """
+        from lasagne.layers import cuda_convnet
 
         l_in = lasagne.layers.InputLayer(
             shape=(batch_size, num_frames, input_width, input_height)
@@ -324,6 +325,7 @@ class DeepQLearner:
         """
         Build a network consistent with the 2013 NIPS paper.
         """
+        from lasagne.layers import cuda_convnet
         l_in = lasagne.layers.InputLayer(
             shape=(batch_size, num_frames, input_width, input_height)
         )

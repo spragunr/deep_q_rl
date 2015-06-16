@@ -71,8 +71,9 @@ class NeuralAgent(Agent):
     def __init__(self, discount, learning_rate, rms_decay, rms_epsilon,
                  momentum, epsilon_start, epsilon_min, epsilon_decay,
                  phi_length, replay_memory_size, exp_pref, nn_file,
-                 pause, network_type, freeze_interval, batch_size,
-                 replay_start_size, update_frequency, image_resize):
+                 pause, network_type, update_rule, batch_accumulator,
+                 freeze_interval, batch_size, replay_start_size,
+                 update_frequency, image_resize):
 
         self.discount = discount
         self.learning_rate = learning_rate
@@ -88,6 +89,8 @@ class NeuralAgent(Agent):
         self.nn_file = nn_file
         self.pause = pause
         self.network_type = network_type
+        self.update_rule = update_rule
+        self.batch_accumulator = batch_accumulator
         self.freeze_interval = freeze_interval
         self.batch_size = batch_size
         self.replay_start_size = replay_start_size
@@ -190,7 +193,9 @@ class NeuralAgent(Agent):
                             self.momentum,
                             self.freeze_interval,
                             self.batch_size,
-                            self.network_type)
+                            self.network_type,
+                            self.update_rule,
+                            self.batch_accumulator)
 
 
 
@@ -199,23 +204,25 @@ class NeuralAgent(Agent):
         self.results_file = open(self.exp_dir + '/results.csv', 'w', 0)
         self.results_file.write(\
             'epoch,num_episodes,total_reward,reward_per_epoch,mean_q\n')
+        self.results_file.flush()
 
     def _open_learning_file(self):
         self.learning_file = open(self.exp_dir + '/learning.csv', 'w', 0)
         self.learning_file.write('mean_loss,epsilon\n')
+        self.learning_file.flush()
 
     def _update_results_file(self, epoch, num_episodes, holdout_sum):
         out = "{},{},{},{},{}\n".format(epoch, num_episodes, self.total_reward,
                                   self.total_reward / float(num_episodes),
                                   holdout_sum)
         self.results_file.write(out)
-
+        self.results_file.flush()
 
     def _update_learning_file(self):
         out = "{},{}\n".format(np.mean(self.loss_averages),
                                self.epsilon)
         self.learning_file.write(out)
-
+        self.learning_file.flush()
 
     def agent_start(self, observation):
         """

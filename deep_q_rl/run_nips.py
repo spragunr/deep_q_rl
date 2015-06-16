@@ -34,6 +34,8 @@ class Defaults:
     # ----------------------
     # Agent/Network parameters:
     # ----------------------
+    UPDATE_RULE = 'rmsprop'
+    BATCH_ACCUMULATOR = 'mean'
     LEARNING_RATE = .0002
     DISCOUNT = .95
     RMS_DECAY = .99 # (Rho)
