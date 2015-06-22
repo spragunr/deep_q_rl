@@ -300,26 +300,31 @@ def test_random_batch():
 
 
 def test_memory_usage_ok():
-    dataset = DataSet(width=80, height=80, max_steps=1000000, phi_length=4)
+    import memory_profiler
+    dataset = DataSet(width=80, height=80, max_steps=100000, phi_length=4)
     last = time.time()
 
     for i in xrange(1000000000):
         if (i % 100000) == 0:
             print i
         dataset.add_sample(np.random.random((80, 80)), 1, 1, False)
+        if i > 200000:
+            states, actions, rewards, next_states, terminals = \
+                                        dataset.random_batch(32)
         if (i % 10007) == 0:
             print time.time() - last
-            print len(dataset)
+            mem_usage = memory_profiler.memory_usage(-1)
+            print len(dataset), mem_usage
         last = time.time()
 
 
 def main():
     #speed_tests()
-    #test_memory_usage_ok()
+    test_memory_usage_ok()
     #test_random_batch()
     #max_size_tests()
     #simple_tests()
-    test_iterator()
+    #test_iterator()
 
 if __name__ == "__main__":
     main()
