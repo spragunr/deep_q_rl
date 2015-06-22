@@ -1,3 +1,11 @@
+# NOTE
+
+This branch is obsolete.  I'm keeping it accessible because this represents
+the version of the code used to obtain results for extended abstract:
+
+Nathan Sprague, [Parameter selection for the deep Q-learning algorithm](http://w3.cs.jmu.edu/spragunr/papers/rldm2015.pdf). In The 2nd Multidisciplinary Conference on Reinforcement Learning and Decision Making (RLDM), June
+2015.
+
 # Introduction 
 
 This package provides a Theano-based implementation of the deep
