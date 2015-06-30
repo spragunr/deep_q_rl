@@ -339,7 +339,7 @@ class NeuralAgent(Agent):
                     self.loss_averages.append(loss)
 
             else: # Still gathering initial random data...
-                int_action = self._choose_action(self.data_set, 1.0,
+                int_action = self._choose_action(self.data_set, self.epsilon,
                                                  cur_img,
                                                  np.clip(reward, -1, 1))
 
