@@ -29,7 +29,7 @@ class NeuralAgent(object):
     randGenerator = random.Random()
 
     def __init__(self, q_network, epsilon_start, epsilon_min,
-                 epsilon_decay, replay_memory_size, exp_pref, pause,
+                 epsilon_decay, replay_memory_size, exp_pref,
                  replay_start_size, update_frequency):
 
         self.network = q_network
@@ -38,7 +38,6 @@ class NeuralAgent(object):
         self.epsilon_decay = epsilon_decay
         self.replay_memory_size = replay_memory_size
         self.exp_pref = exp_pref
-        self.pause = pause
         self.replay_start_size = replay_start_size
         self.update_frequency = update_frequency
         self.phi_length = self.network.num_frames
@@ -177,8 +176,6 @@ class NeuralAgent(object):
             self.total_reward += reward
             action = self._choose_action(self.test_data_set, .05,
                                          observation, np.clip(reward, -1, 1))
-            if self.pause > 0:
-                time.sleep(self.pause)
 
         #NOT TESTING---------------------------
         else:

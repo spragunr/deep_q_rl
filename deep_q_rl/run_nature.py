@@ -13,11 +13,6 @@ import sys
 
 class Defaults:
     # ----------------------
-    # RLGlue Parameters
-    # ----------------------
-    RLGLUE_PORT = 4096
-
-    # ----------------------
     # Experiment Parameters
     # ----------------------
     STEPS_PER_EPOCH = 250000

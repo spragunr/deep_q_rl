@@ -46,9 +46,6 @@ def process_args(args, defaults, description):
                         default=defaults.FRAME_SKIP, type=int,
                         help='Every how many frames to process '
                         '(default: %(default)s)')
-    parser.add_argument('--glue-port', dest="glue_port", type=int,
-                        default=defaults.RLGLUE_PORT,
-                        help='rlglue port (default: %(default)s)')
 
     parser.add_argument('--update-rule', dest="update_rule",
                         type=str, default=defaults.UPDATE_RULE,
@@ -115,8 +112,6 @@ def process_args(args, defaults, description):
                         help=('crop|scale (default: %(default)s)'))
     parser.add_argument('--nn-file', dest="nn_file", type=str, default=None,
                         help='Pickle file containing trained net.')
-    parser.add_argument('--pause', type=float, default=0,
-                        help='Amount of time to pause display while testing.')
 
 
     parameters = parser.parse_args(args)
@@ -173,7 +168,6 @@ def launch(args, defaults, description):
                                   parameters.epsilon_decay,
                                   parameters.replay_memory_size,
                                   parameters.experiment_prefix,
-                                  parameters.pause,
                                   parameters.replay_start_size,
                                   parameters.update_frequency)
 

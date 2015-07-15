@@ -73,7 +73,7 @@ class ALEExperiment(object):
         """ return (terminal, num_steps)"""
         self.ale.reset_game()
         num_steps = 1
-       
+
         action = self.agent.start_episode(self.get_image())
 
         while not self.ale.game_over() and num_steps < max_steps:
