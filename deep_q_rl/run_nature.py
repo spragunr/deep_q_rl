@@ -56,7 +56,9 @@ class Defaults:
     NETWORK_TYPE = "nature_dnn"
     FREEZE_INTERVAL = 10000
     REPLAY_START_SIZE = 50000
-    IMAGE_RESIZE = 'scale'
+    RESIZE_METHOD = 'scale'
+    RESIZED_WIDTH = 84
+    RESIZED_HEIGHT = 84
 
 if __name__ == "__main__":
     launcher.launch(sys.argv[1:], Defaults, __doc__)

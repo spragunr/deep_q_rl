@@ -35,7 +35,7 @@ class DeepQLearner:
         self.num_actions = num_actions
         self.num_frames = num_frames
         self.batch_size = batch_size
-        self.gamma = discount
+        self.discount = discount
         self.rho = rho
         self.lr = learning_rate
         self.rms_epsilon = rms_epsilon
@@ -87,7 +87,7 @@ class DeepQLearner:
                                                     next_states / input_scale)
             next_q_vals = theano.gradient.disconnected_grad(next_q_vals)
 
-        target = rewards + self.gamma * T.max(next_q_vals, axis=1,
+        target = rewards + self.discount * T.max(next_q_vals, axis=1,
                                               keepdims=True)
         diff = target - q_vals[T.arange(batch_size),
                                actions.reshape((-1,))].reshape((-1, 1))

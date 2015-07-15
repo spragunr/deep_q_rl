@@ -51,7 +51,9 @@ class Defaults:
     NETWORK_TYPE = "nips_dnn"
     FREEZE_INTERVAL = -1
     REPLAY_START_SIZE = 100
-    IMAGE_RESIZE = 'crop'
+    RESIZE_METHOD = 'crop'
+    RESIZED_WIDTH = 84
+    RESIZED_HEIGHT = 84
 
 
 if __name__ == "__main__":
