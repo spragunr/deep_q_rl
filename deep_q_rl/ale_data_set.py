@@ -32,7 +32,7 @@ class DataSet(object):
         self.max_steps = max_steps
         self.phi_length = phi_length
         if capacity == None:
-            self.capacity = max_steps + int(max_steps * .1)
+            self.capacity = max_steps + int(np.ceil(max_steps * .1))
         else:
             self.capacity = capacity
         self.states = np.zeros((self.capacity, height, width), dtype='uint8')
