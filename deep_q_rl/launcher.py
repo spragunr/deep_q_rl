@@ -112,7 +112,10 @@ def process_args(args, defaults, description):
                         help=('crop|scale (default: %(default)s)'))
     parser.add_argument('--nn-file', dest="nn_file", type=str, default=None,
                         help='Pickle file containing trained net.')
-
+    parser.add_argument('--death-ends-episode', dest="death_ends_episode",
+                        action='store_true',
+                        default=defaults.DEATH_ENDS_EPISODE,
+                        help='Show the game screen.')
 
     parameters = parser.parse_args(args)
     if parameters.experiment_prefix is None:
@@ -177,7 +180,8 @@ def launch(args, defaults, description):
                                               parameters.resize_method,
                                               parameters.epochs,
                                               parameters.steps_per_epoch,
-                                              parameters.steps_per_test)
+                                              parameters.steps_per_test,
+                                              parameters.death_ends_episode)
 
 
     experiment.run()
