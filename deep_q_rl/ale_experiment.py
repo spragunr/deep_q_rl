@@ -38,6 +38,7 @@ class ALEExperiment(object):
         self.resize_method = resize_method
         self.width, self.height = ale.getScreenDims()
         self.screenRGB = np.empty((self.height, self.width, 3), dtype=np.uint8)
+        self.terminal_lol = False # Most recent episode ended on a loss of life
 
     def run(self):
         """
@@ -63,6 +64,7 @@ class ALEExperiment(object):
         prefix - string to print ('training' or 'testing')
 
         """
+        self.terminal_lol = False # Make sure each epoch starts with a reset.
         steps_left = num_steps
         while steps_left > 0:
             prefix = "testing" if testing else "training"
@@ -72,9 +74,15 @@ class ALEExperiment(object):
 
             steps_left -= num_steps
 
+
     def run_episode(self, max_steps, testing):
         """ return (terminal, num_steps)"""
-        self.ale.reset_game()
+
+        if self.terminal_lol and not self.ale.game_over():
+            self.ale.act(0) # Take a single null action
+        else:
+            self.ale.reset_game()
+
         start_lives = self.ale.lives()
 
         action = self.agent.start_episode(self.get_image())
@@ -83,9 +91,9 @@ class ALEExperiment(object):
         while not terminal and num_steps < max_steps:
             reward = self.ale.act(self.min_action_set[action])
             action = self.agent.step(reward, self.get_image())
-            terminal = (self.ale.game_over() or
-                        (self.death_ends_episode and not testing and
-                         self.ale.lives() < start_lives))
+            self.terminal_lol = (self.death_ends_episode and not testing and
+                                 self.ale.lives() < start_lives)
+            terminal = self.ale.game_over() or self.terminal_lol
             num_steps += 1
 
         self.agent.end_episode(reward)

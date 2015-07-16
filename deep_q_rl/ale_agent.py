@@ -13,17 +13,11 @@ import logging
 
 import random
 import numpy as np
-import cv2
-
-import matplotlib.pyplot as plt
 
 import ale_data_set
-import theano
 
 import sys
 sys.setrecursionlimit(10000)
-
-floatX = theano.config.floatX
 
 class NeuralAgent(object):
     randGenerator = random.Random()
@@ -52,7 +46,7 @@ class NeuralAgent(object):
 
         try:
             os.stat(self.exp_dir)
-        except:
+        except OSError:
             os.makedirs(self.exp_dir)
 
         self.num_actions = self.network.num_actions
@@ -146,6 +140,7 @@ class NeuralAgent(object):
 
 
     def _show_phis(self, phi1, phi2):
+        import matplotlib.pyplot as plt
         for p in range(self.phi_length):
             plt.subplot(2, self.phi_length, p+1)
             plt.imshow(phi1[p, :, :], interpolation='none', cmap="gray")
