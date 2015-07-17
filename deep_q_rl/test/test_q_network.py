@@ -8,7 +8,7 @@ import unittest
 import numpy.testing
 import lasagne
 
-import q_network
+import deep_q_rl.q_network as q_network
 
 class ChainMDP(object):
     """Simple markov chain style MDP.  Three "rooms" and one absorbing
