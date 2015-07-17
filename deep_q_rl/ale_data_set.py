@@ -67,11 +67,10 @@ class DataSet(object):
             self.terminal = np.roll(self.terminal, -roll_amount)
             self.count = self.max_steps
 
-    def no_terminal(self, start, end):
+    def single_episode(self, start, end):
         """ Make sure that a possible phi does not cross a trial boundary.
         """
-        # start and end are inclusive
-        return np.alltrue(np.logical_not(self.terminal[start:end+1]))
+        return np.alltrue(np.logical_not(self.terminal[start:end]))
 
     def last_phi(self):
         """
@@ -96,7 +95,7 @@ class DataSet(object):
 
     def _make_phi(self, index):
         end_index = index + self.phi_length - 1
-        #assert self.no_terminal(index, end_index)
+        #assert self.single_episode(index, end_index)
         return self.states[index:end_index + 1, ...]
 
     def _empty_batch(self, batch_size):
@@ -121,11 +120,11 @@ class DataSet(object):
                 self._empty_batch(batch_size)      
         while index <= self._max_index():
             end_index = index + self.phi_length - 1
-            if self.no_terminal(index, end_index):
+            if self.single_episode(index, end_index):
                 states[batch_count, ...] = self._make_phi(index)
                 actions[batch_count, 0] = self.actions[end_index]
                 rewards[batch_count, 0] = self.rewards[end_index]
-                terminals[batch_count, 0] = self.terminal[end_index+1]
+                terminals[batch_count, 0] = self.terminal[end_index]
                 next_states[batch_count, ...] = self._make_phi(index+1)
                 batch_count += 1
             index += 1
@@ -147,11 +146,11 @@ class DataSet(object):
         while count < batch_size:
             index = np.random.randint(self._min_index(), self._max_index()+1)
             end_index = index + self.phi_length - 1
-            if self.no_terminal(index, end_index):
+            if self.single_episode(index, end_index):
                 states[count, ...] = self._make_phi(index)
                 actions[count, 0] = self.actions[end_index]
                 rewards[count, 0] = self.rewards[end_index]
-                terminals[count, 0] = self.terminal[end_index+1]
+                terminals[count, 0] = self.terminal[end_index]
                 next_states[count, ...] = self._make_phi(index+1)
                 count += 1
 

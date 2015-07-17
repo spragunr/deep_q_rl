@@ -56,7 +56,7 @@ class DeepQLearner:
         next_states = T.tensor4('next_states')
         rewards = T.col('rewards')
         actions = T.icol('actions')
-        #terminals = T.icol('terminals')
+        terminals = T.icol('terminals')
 
         self.states_shared = theano.shared(
             np.zeros((batch_size, num_frames, input_height, input_width),
@@ -74,9 +74,9 @@ class DeepQLearner:
             np.zeros((batch_size, 1), dtype='int32'),
             broadcastable=(False, True))
 
-        # self.terminals_shared = theano.shared(
-        #     np.zeros((batch_size, 1), dtype='int32'),
-        #     broadcastable=(False,True))
+        self.terminals_shared = theano.shared(
+            np.zeros((batch_size, 1), dtype='int32'),
+            broadcastable=(False, True))
 
         q_vals = lasagne.layers.get_output(self.l_out, states / input_scale)
         if self.freeze_interval > 0:
@@ -87,8 +87,9 @@ class DeepQLearner:
                                                     next_states / input_scale)
             next_q_vals = theano.gradient.disconnected_grad(next_q_vals)
 
-        target = rewards + self.discount * T.max(next_q_vals, axis=1,
-                                              keepdims=True)
+        target = (rewards +
+                  (T.ones_like(terminals) - terminals) *
+                  self.discount * T.max(next_q_vals, axis=1, keepdims=True))
         diff = target - q_vals[T.arange(batch_size),
                                actions.reshape((-1,))].reshape((-1, 1))
 
@@ -105,11 +106,11 @@ class DeepQLearner:
             next_states: self.next_states_shared,
             rewards: self.rewards_shared,
             actions: self.actions_shared,
-            #terminals: self.terminals_shared
+            terminals: self.terminals_shared
         }
         if update_rule == 'deepmind_rmsprop':
             updates = deepmind_rmsprop(loss, params, self.lr, self.rho,
-                                               self.rms_epsilon)
+                                       self.rms_epsilon)
         elif update_rule == 'rmsprop':
             updates = lasagne.updates.rmsprop(loss, params, self.lr, self.rho,
                                               self.rms_epsilon)
@@ -171,7 +172,7 @@ class DeepQLearner:
         self.next_states_shared.set_value(next_states)
         self.actions_shared.set_value(actions)
         self.rewards_shared.set_value(rewards)
-        #self.terminals_shared.set_value(np.logical_not(terminals))
+        self.terminals_shared.set_value(terminals)
         if (self.freeze_interval > 0 and
             self.update_counter % self.freeze_interval == 0):
             self.reset_q_hat()
