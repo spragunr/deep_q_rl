@@ -213,7 +213,7 @@ class DeepQLearner:
             filter_size=(8, 8),
             stride=(4, 4),
             nonlinearity=lasagne.nonlinearities.rectify,
-            W=lasagne.init.HeUniform(c01b=True), # Defaults to Glorot
+            W=lasagne.init.HeUniform(), # Defaults to Glorot
             b=lasagne.init.Constant(.1),
             dimshuffle=True
         )
@@ -224,7 +224,7 @@ class DeepQLearner:
             filter_size=(4, 4),
             stride=(2, 2),
             nonlinearity=lasagne.nonlinearities.rectify,
-            W=lasagne.init.HeUniform(c01b=True),
+            W=lasagne.init.HeUniform(),
             b=lasagne.init.Constant(.1),
             dimshuffle=True
         )
@@ -235,7 +235,7 @@ class DeepQLearner:
             filter_size=(3, 3),
             stride=(1, 1),
             nonlinearity=lasagne.nonlinearities.rectify,
-            W=lasagne.init.HeUniform(c01b=True),
+            W=lasagne.init.HeUniform(),
             b=lasagne.init.Constant(.1),
             dimshuffle=True
         )
