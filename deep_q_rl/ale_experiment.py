@@ -87,6 +87,7 @@ class ALEExperiment(object):
 
         action = self.agent.start_episode(self.get_image())
         num_steps = 1
+        reward = 0
         terminal = False
         while not terminal and num_steps < max_steps:
             reward = self.ale.act(self.min_action_set[action])
