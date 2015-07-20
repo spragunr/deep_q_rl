@@ -49,7 +49,7 @@ class Defaults:
     RESIZE_METHOD = 'crop'
     RESIZED_WIDTH = 84
     RESIZED_HEIGHT = 84
-    DEATH_ENDS_EPISODE = False
+    DEATH_ENDS_EPISODE = 'false'
 
 if __name__ == "__main__":
     launcher.launch(sys.argv[1:], Defaults, __doc__)

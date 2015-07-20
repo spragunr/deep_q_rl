@@ -28,7 +28,7 @@ if [ ! -d "./pylearn2" ]
 then
 echo "==>installing Pylearn2 ..."
 # dependencies...
-sudo apt-get install libyaml-0-2
+sudo apt-get install libyaml-0-2 python-six
 git clone git://github.com/lisa-lab/pylearn2
 fi
 cd ./pylearn2

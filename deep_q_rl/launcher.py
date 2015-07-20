@@ -116,14 +116,21 @@ def process_args(args, defaults, description):
     parser.add_argument('--nn-file', dest="nn_file", type=str, default=None,
                         help='Pickle file containing trained net.')
     parser.add_argument('--death-ends-episode', dest="death_ends_episode",
-                        action='store_true',
-                        default=defaults.DEATH_ENDS_EPISODE,
-                        help='Show the game screen.')
+                        type=str, default=defaults.DEATH_ENDS_EPISODE,
+                        help=('true|false (default: %(default)s)'))
+
 
     parameters = parser.parse_args(args)
     if parameters.experiment_prefix is None:
         name = os.path.splitext(os.path.basename(parameters.rom))[0]
         parameters.experiment_prefix = name
+
+    if parameters.death_ends_episode == 'true':
+        parameters.death_ends_episode = True
+    elif parameters.death_ends_episode == 'false':
+        parameters.death_ends_episode = False
+    else:
+        raise ValueError("--death-ends-episode must be true or false")
 
     return parameters
 
