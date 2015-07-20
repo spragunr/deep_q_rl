@@ -24,8 +24,6 @@ Here is a video showing a trained network playing breakout (using an earlier ver
 * [Lasagne](http://lasagne.readthedocs.org/en/latest/) ([https://github.com/Lasagne/Lasagne](https://github.com/Lasagne/Lasagne)
 * [Pylearn2](http://deeplearning.net/software/pylearn2/) ([https://github.com/lisa-lab/pylearn2](https://github.com/lisa-lab/pylearn2))
 * [Arcade Learning Environment](http://www.arcadelearningenvironment.org/) ([https://github.com/mgbellemare/Arcade-Learning-Environment](https://github.com/mgbellemare/Arcade-Learning-Environment))
-* [RL-Glue](http://glue.rl-community.org/wiki/Main_Page)
-* [RL-Glue Python Codec](http://glue.rl-community.org/wiki/Python_Codec)
 
 The script `dep_script.sh` can be used to install all dependencies under Ubuntu.
 
@@ -57,20 +55,6 @@ After training completes, you can watch the network play using the
 `$ python ale_run_watch.py breakout_05-28-17-09_0p00025_0p99/network_file_99.pkl`
 
 # Performance Tuning
-
-## CPU Frequency Under Ubuntu 14.04 (Trusty)
-
-The Linux Kernel automatically adjusts processor frequency in
-response to CPU load. Since ALE (which runs on the CPU) alternates
-with GPU computations, the overall CPU load stays relatively low, and
-the processor frequency is not increased.
-
-This can be addressed by using a package like
-[indicator-cpufreq](https://launchpad.net/indicator-cpufreq) to switch
-from the default "ondemand" governor to the "performance" governor.
-The performance governor pegs the CPU at the maximum frequency
-resulting in a significant improvement in performance at the expense
-of greater power consumption and CPU temperatures.
 
 ## Theano Configuration
 
