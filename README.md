@@ -1,5 +1,7 @@
 # Introduction 
 
+*NOTE: This branch is obsolete.  I'm keeping it available as a distinct branch in case anyone needs to use RL-Glue.  This branch won't be receive any bug-fixes.*
+
 This package provides a Lasagne/Theano-based implementation of the deep
 Q-learning algorithm described in:
 
