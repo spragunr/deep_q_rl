@@ -1,9 +1,9 @@
 """
-This uses the skeleton_agent.py file from the Python-codec of rl-glue
-as a starting point.
-
+The NeuralAgent class wraps a deep Q-network for training and testing
+in the Arcade learning environment.
 
 Author: Nathan Sprague
+
 """
 
 import os
@@ -117,10 +117,10 @@ class NeuralAgent(object):
         an action has been taken.
 
         Arguments:
-           observation - An observation of type rlglue.types.Observation
+           observation - height x width numpy array
 
         Returns:
-           An action of type rlglue.types.Action
+           An integer action
         """
 
         self.step_counter = 0
@@ -157,10 +157,10 @@ class NeuralAgent(object):
 
         Arguments:
            reward      - Real valued reward.
-           observation - An observation of type rlglue.types.Observation
+           observation - A height x width numpy array
 
         Returns:
-           An action of type rlglue.types.Action
+           An integer action.
 
         """
 

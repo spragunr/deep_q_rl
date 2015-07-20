@@ -1,13 +1,5 @@
-"""
-This is an RLGlue experiment designed to collect the type of data
-presented in:
-
-Playing Atari with Deep Reinforcement Learning
-Volodymyr Mnih, Koray Kavukcuoglu, David Silver, Alex Graves, Ioannis
-Antonoglou, Daan Wierstra, Martin Riedmiller
-
-(Based on the sample_experiment.py from the Rl-glue python codec examples.)
-
+"""The ALEExperiment class handles the logic for training a deep
+Q-learning agent in the Arcade Learning Environment.
 
 Author: Nathan Sprague
 
@@ -60,8 +52,9 @@ class ALEExperiment(object):
         every trial
 
         Arguments:
+        epoch - the current epoch number
         num_steps - steps per epoch
-        prefix - string to print ('training' or 'testing')
+        testing - True if this Epoch is used for testing and not training
 
         """
         self.terminal_lol = False # Make sure each epoch starts with a reset.
@@ -76,7 +69,16 @@ class ALEExperiment(object):
 
 
     def run_episode(self, max_steps, testing):
-        """ return (terminal, num_steps)"""
+        """Run a single training episode.
+
+        The boolean terminal value returned indicates whether the
+        episode ended because the game ended or the agent died (True)
+        or because the maximum number of steps was reached (False).
+        Currently this value will be ignored.
+
+        Return: (terminal, num_steps)
+
+        """
 
         if self.terminal_lol and not self.ale.game_over():
             self.ale.act(0) # Take a single null action
@@ -102,7 +104,7 @@ class ALEExperiment(object):
 
 
     def get_image(self):
-        """ Get a screen image from ale and resize appropriately. """
+        """ Get a screen image from ale and rescale appropriately. """
 
         # convert to greyscale
         self.ale.getScreenRGB(self.screenRGB)

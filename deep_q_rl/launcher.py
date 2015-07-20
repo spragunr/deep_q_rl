@@ -1,12 +1,14 @@
 #! /usr/bin/env python
-"""This script launches all of the processes necessary to train a
-deep Q-network on an ALE game.
+"""This script handles reading command line arguments and starting the
+training process.  It shouldn't be executed directly; it is used by
+run_nips.py or run_nature.py.
 
 """
 import os
 import argparse
 import logging
 import ale_python_interface
+import cPickle
 
 import ale_experiment
 import ale_agent
@@ -19,6 +21,7 @@ def process_args(args, defaults, description):
     args     - list of command line arguments (not including executable name)
     defaults - a name space with variables corresponding to each of
                the required default command line values.
+    description - a string to display at the top of the help message.
     """
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('-r', '--rom', dest="rom", default=defaults.ROM,
@@ -128,7 +131,7 @@ def process_args(args, defaults, description):
 
 def launch(args, defaults, description):
     """
-    Start all of the processes necessary for a single training run.
+    Execute a complete training run.
     """
 
     logging.basicConfig(level=logging.INFO)
@@ -150,20 +153,24 @@ def launch(args, defaults, description):
 
     num_actions = len(ale.getMinimalActionSet())
 
-    network = q_network.DeepQLearner(defaults.RESIZED_WIDTH,
-                                     defaults.RESIZED_HEIGHT,
-                                     num_actions,
-                                     parameters.phi_length,
-                                     parameters.discount,
-                                     parameters.learning_rate,
-                                     parameters.rms_decay,
-                                     parameters.rms_epsilon,
-                                     parameters.momentum,
-                                     parameters.freeze_interval,
-                                     parameters.batch_size,
-                                     parameters.network_type,
-                                     parameters.update_rule,
-                                     parameters.batch_accumulator)
+    if parameters.nn_file is None:
+        network = q_network.DeepQLearner(defaults.RESIZED_WIDTH,
+                                         defaults.RESIZED_HEIGHT,
+                                         num_actions,
+                                         parameters.phi_length,
+                                         parameters.discount,
+                                         parameters.learning_rate,
+                                         parameters.rms_decay,
+                                         parameters.rms_epsilon,
+                                         parameters.momentum,
+                                         parameters.freeze_interval,
+                                         parameters.batch_size,
+                                         parameters.network_type,
+                                         parameters.update_rule,
+                                         parameters.batch_accumulator)
+    else:
+        handle = open(parameters.nn_file, 'r')
+        network = cPickle.load(handle)
 
     agent = ale_agent.NeuralAgent(network,
                                   parameters.epsilon_start,
