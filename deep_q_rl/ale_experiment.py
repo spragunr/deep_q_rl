@@ -88,8 +88,7 @@ class ALEExperiment(object):
         start_lives = self.ale.lives()
 
         action = self.agent.start_episode(self.get_image())
-        num_steps = 1
-        reward = 0
+        num_steps = 0
         terminal = False
         while not terminal and num_steps < max_steps:
             reward = self.ale.act(self.min_action_set[action])
@@ -106,7 +105,6 @@ class ALEExperiment(object):
     def get_image(self):
         """ Get a screen image from ale and rescale appropriately. """
 
-        # convert to greyscale
         self.ale.getScreenRGB(self.screenRGB)
 
         greyscaled = cv2.cvtColor(self.screenRGB, cv2.COLOR_RGB2GRAY)
