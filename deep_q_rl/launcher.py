@@ -132,6 +132,17 @@ def process_args(args, defaults, description):
     else:
         raise ValueError("--death-ends-episode must be true or false")
 
+    if parameters.freeze_interval > 0:
+        # This addresses an inconsistency between the Nature paper and
+        # the Deepmind code.  The paper states that the target network
+        # update frequency is "measured in the number of parameter
+        # updates".  In the code it is actually measured in the number
+        # of action choices.
+        parameters.freeze_interval = (parameters.freeze_interval //
+                                      parameters.update_frequency)
+
+    print parameters.freeze_interval
+
     return parameters
 
 
