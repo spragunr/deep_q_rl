@@ -87,18 +87,22 @@ class ALEExperiment(object):
 
         start_lives = self.ale.lives()
 
+
         action = self.agent.start_episode(self.get_image())
         num_steps = 0
-        terminal = False
-        while not terminal and num_steps < max_steps:
+        while True:
             reward = self.ale.act(self.min_action_set[action])
-            action = self.agent.step(reward, self.get_image())
             self.terminal_lol = (self.death_ends_episode and not testing and
                                  self.ale.lives() < start_lives)
             terminal = self.ale.game_over() or self.terminal_lol
             num_steps += 1
 
-        self.agent.end_episode(reward)
+            if terminal or num_steps >= max_steps:
+                self.agent.end_episode(reward)
+                break
+
+            action = self.agent.step(reward, self.get_image())
+
         return terminal, num_steps
 
 
