@@ -275,13 +275,14 @@ class NeuralAgent(object):
         self.testing = False
         holdout_size = 3200
 
-        if self.holdout_data is None:
+        if self.holdout_data is None and len(self.data_set) > holdout_size:
             self.holdout_data = self.data_set.random_batch(holdout_size)[0]
 
         holdout_sum = 0
-        for i in range(holdout_size):
-            holdout_sum += np.mean(
-                self.network.q_vals(self.holdout_data[i, ...]))
+        if self.holdout_data is not None:
+            for i in range(holdout_size):
+                holdout_sum += np.mean(
+                    self.network.q_vals(self.holdout_data[i, ...]))
 
         self._update_results_file(epoch, self.episode_counter,
                                   holdout_sum / holdout_size)
