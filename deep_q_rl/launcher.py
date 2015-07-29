@@ -49,6 +49,11 @@ def process_args(args, defaults, description):
                         default=defaults.FRAME_SKIP, type=int,
                         help='Every how many frames to process '
                         '(default: %(default)s)')
+    parser.add_argument('--repeat-action-probability',
+                        dest="repeat_action_probability",
+                        default=defaults.REPEAT_ACTION_PROBABILITY, type=float,
+                        help=('Probability that action choice will be ' +
+                              'ignored (default: %(default)s)'))
 
     parser.add_argument('--update-rule', dest="update_rule",
                         type=str, default=defaults.UPDATE_RULE,
@@ -145,8 +150,6 @@ def process_args(args, defaults, description):
         parameters.freeze_interval = (parameters.freeze_interval //
                                       parameters.update_frequency)
 
-    print parameters.freeze_interval
-
     return parameters
 
 
@@ -170,6 +173,8 @@ def launch(args, defaults, description):
     ale.setBool('display_screen', parameters.display_screen)
     ale.setInt('frame_skip', parameters.frame_skip)
     ale.setBool('color_averaging', parameters.merge_frames)
+    ale.setFloat('repeat_action_probability',
+                 parameters.repeat_action_probability)
 
     ale.loadROM(full_rom_path)
 
