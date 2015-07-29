@@ -36,6 +36,7 @@ class Defaults:
     RMS_DECAY = .99 # (Rho)
     RMS_EPSILON = 1e-6
     MOMENTUM = 0
+    CLIP_DELTA = 0
     EPSILON_START = 1.0
     EPSILON_MIN = .1
     EPSILON_DECAY = 1000000

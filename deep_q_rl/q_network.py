@@ -25,10 +25,11 @@ class DeepQLearner:
     Deep Q-learning network using Lasagne.
     """
 
-    def __init__(self, input_width, input_height, num_actions, num_frames,
-                 discount, learning_rate, rho, rms_epsilon, momentum,
-                 freeze_interval, batch_size, network_type,
-                 update_rule, batch_accumulator, input_scale=255.0):
+    def __init__(self, input_width, input_height, num_actions,
+                 num_frames, discount, learning_rate, rho,
+                 rms_epsilon, momentum, clip_delta, freeze_interval,
+                 batch_size, network_type, update_rule,
+                 batch_accumulator, input_scale=255.0):
 
         self.input_width = input_width
         self.input_height = input_height
@@ -40,6 +41,7 @@ class DeepQLearner:
         self.lr = learning_rate
         self.rms_epsilon = rms_epsilon
         self.momentum = momentum
+        self.clip_delta = clip_delta
         self.freeze_interval = freeze_interval
 
         self.update_counter = 0
@@ -92,6 +94,9 @@ class DeepQLearner:
                   self.discount * T.max(next_q_vals, axis=1, keepdims=True))
         diff = target - q_vals[T.arange(batch_size),
                                actions.reshape((-1,))].reshape((-1, 1))
+
+        if self.clip_delta > 0:
+            diff = diff.clip(-self.clip_delta, self.clip_delta)
 
         if batch_accumulator == 'sum':
             loss = T.sum(diff ** 2)

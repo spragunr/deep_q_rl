@@ -70,6 +70,10 @@ def process_args(args, defaults, description):
     parser.add_argument('--momentum', type=float, default=defaults.MOMENTUM,
                         help=('Momentum term for Nesterov momentum. '+
                               '(default: %(default)s)'))
+    parser.add_argument('--clip-delta', dest="clip_delta", type=float,
+                        default=defaults.CLIP_DELTA,
+                        help=('Max absolute value for Q-update delta value. ' +
+                              '(default: %(default)s)'))
     parser.add_argument('--discount', type=float, default=defaults.DISCOUNT,
                         help='Discount rate')
     parser.add_argument('--epsilon-start', dest="epsilon_start",
@@ -181,6 +185,7 @@ def launch(args, defaults, description):
                                          parameters.rms_decay,
                                          parameters.rms_epsilon,
                                          parameters.momentum,
+                                         parameters.clip_delta,
                                          parameters.freeze_interval,
                                          parameters.batch_size,
                                          parameters.network_type,
