@@ -98,7 +98,7 @@ class ALEExperiment(object):
             num_steps += 1
 
             if terminal or num_steps >= max_steps:
-                self.agent.end_episode(reward)
+                self.agent.end_episode(reward, terminal)
                 break
 
             action = self.agent.step(reward, self.get_image())

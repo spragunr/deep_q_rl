@@ -125,6 +125,7 @@ class NeuralAgent(object):
 
         self.step_counter = 0
         self.batch_counter = 0
+        self.episode_reward = 0
 
         # We report the mean loss for every epoch.
         self.loss_averages = []
@@ -168,7 +169,7 @@ class NeuralAgent(object):
 
         #TESTING---------------------------
         if self.testing:
-            self.total_reward += reward
+            self.episode_reward += reward
             action = self._choose_action(self.test_data_set, .05,
                                          observation, np.clip(reward, -1, 1))
 
@@ -227,22 +228,27 @@ class NeuralAgent(object):
                                   next_states, terminals)
 
 
-    def end_episode(self, reward):
+    def end_episode(self, reward, terminal=True):
         """
         This function is called once at the end of an episode.
 
         Arguments:
            reward      - Real valued reward.
+           terminal    - Whether the game ended intrinsically (ie we didn't run out of time steps)
 
         Returns:
             None
         """
-        self.episode_counter += 1
+        
+        self.episode_reward += reward
         self.step_counter += 1
         total_time = time.time() - self.start_time
 
         if self.testing:
-            self.total_reward += reward
+            # if we run out of time, only count the last episode if it was the only episode
+            if terminal or self.episode_counter == 0:
+                self.episode_counter += 1
+                self.total_reward += self.episode_reward
         else:
 
             # Store the latest sample.
