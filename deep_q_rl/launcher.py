@@ -127,7 +127,9 @@ def process_args(args, defaults, description):
     parser.add_argument('--death-ends-episode', dest="death_ends_episode",
                         type=str, default=defaults.DEATH_ENDS_EPISODE,
                         help=('true|false (default: %(default)s)'))
-
+    parser.add_argument('--max-start-nullops', dest="max_start_nullops",
+                        type=int, default=defaults.MAX_START_NULLOPS,
+                        help='Number of frames to do nothing for at the start of testing (default: %(default)s)')
 
     parameters = parser.parse_args(args)
     if parameters.experiment_prefix is None:
@@ -216,7 +218,8 @@ def launch(args, defaults, description):
                                               parameters.epochs,
                                               parameters.steps_per_epoch,
                                               parameters.steps_per_test,
-                                              parameters.death_ends_episode)
+                                              parameters.death_ends_episode,
+                                              parameters.max_start_nullops)
 
 
     experiment.run()
