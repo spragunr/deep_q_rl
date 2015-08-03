@@ -234,18 +234,19 @@ class NeuralAgent(object):
 
         Arguments:
            reward      - Real valued reward.
-           terminal    - Whether the game ended intrinsically (ie we didn't run out of time steps)
-
+           terminal    - Whether the episode ended intrinsically
+                         (ie we didn't run out of steps)
         Returns:
             None
         """
-        
+
         self.episode_reward += reward
         self.step_counter += 1
         total_time = time.time() - self.start_time
 
         if self.testing:
-            # if we run out of time, only count the last episode if it was the only episode
+            # If we run out of time, only count the last episode if
+            # it was the only episode.
             if terminal or self.episode_counter == 0:
                 self.episode_counter += 1
                 self.total_reward += self.episode_reward
