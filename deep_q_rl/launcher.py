@@ -35,9 +35,6 @@ def process_args(args, defaults, description):
     parser.add_argument('-t', '--test-length', dest="steps_per_test",
                         type=int, default=defaults.STEPS_PER_TEST,
                         help='Number of steps per test (default: %(default)s)')
-    parser.add_argument('--merge', dest="merge_frames", default=False,
-                        action="store_true",
-                        help='Tell ALE to send the averaged frames')
     parser.add_argument('--display-screen', dest="display_screen",
                         action='store_true', default=False,
                         help='Show the game screen.')
@@ -127,7 +124,10 @@ def process_args(args, defaults, description):
     parser.add_argument('--death-ends-episode', dest="death_ends_episode",
                         type=str, default=defaults.DEATH_ENDS_EPISODE,
                         help=('true|false (default: %(default)s)'))
-
+    parser.add_argument('--max-start-nullops', dest="max_start_nullops",
+                        type=int, default=defaults.MAX_START_NULLOPS,
+                        help=('Maximum number of null-ops at the start ' +
+                              'of games. (default: %(default)s)'))
 
     parameters = parser.parse_args(args)
     if parameters.experiment_prefix is None:
@@ -171,8 +171,6 @@ def launch(args, defaults, description):
     ale = ale_python_interface.ALEInterface()
     ale.setInt('random_seed', 123)
     ale.setBool('display_screen', parameters.display_screen)
-    ale.setInt('frame_skip', parameters.frame_skip)
-    ale.setBool('color_averaging', parameters.merge_frames)
     ale.setFloat('repeat_action_probability',
                  parameters.repeat_action_probability)
 
@@ -216,7 +214,9 @@ def launch(args, defaults, description):
                                               parameters.epochs,
                                               parameters.steps_per_epoch,
                                               parameters.steps_per_test,
-                                              parameters.death_ends_episode)
+                                              parameters.frame_skip,
+                                              parameters.death_ends_episode,
+                                              parameters.max_start_nullops)
 
 
     experiment.run()
