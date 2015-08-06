@@ -18,7 +18,7 @@ class Defaults:
     STEPS_PER_EPOCH = 50000
     EPOCHS = 100
     STEPS_PER_TEST = 10000
-    
+
     # ----------------------
     # ALE Parameters
     # ----------------------
@@ -26,7 +26,7 @@ class Defaults:
     ROM = 'breakout.bin'
     FRAME_SKIP = 4
     REPEAT_ACTION_PROBABILITY = 0
-    
+
     # ----------------------
     # Agent/Network parameters:
     # ----------------------
