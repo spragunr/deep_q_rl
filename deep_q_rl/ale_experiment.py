@@ -11,6 +11,8 @@ import cv2
 # Number of rows to crop off the bottom of the (downsampled) screen.
 # This is appropriate for breakout, but it may need to be modified
 # for other games.
+import time
+
 CROP_OFFSET = 8
 
 
@@ -136,8 +138,12 @@ class ALEExperiment(object):
 
         start_lives = self.ale.lives()
 
+        t0 = time.time()
+
         action = self.agent.start_episode(self.get_observation())
         num_steps = 0
+        terminal = False
+
         while True:
             reward = self._step(self.min_action_set[action])
             self.terminal_lol = (self.death_ends_episode and not testing and
@@ -150,6 +156,12 @@ class ALEExperiment(object):
                 break
 
             action = self.agent.step(reward, self.get_observation())
+
+        if not testing:
+            t1 = time.time()
+            total_time = t1 - t0
+            logging.info("steps/second: {:.2f}".format(num_steps/total_time))
+
         return terminal, num_steps
 
 

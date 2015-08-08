@@ -132,7 +132,6 @@ class NeuralAgent(object):
         # We report the mean loss for every epoch.
         self.loss_averages = []
 
-        self.start_time = time.time()
         return_action = self.rng.randint(0, self.num_actions)
 
         self.last_action = return_action
@@ -244,7 +243,6 @@ class NeuralAgent(object):
 
         self.episode_reward += reward
         self.step_counter += 1
-        total_time = time.time() - self.start_time
 
         if self.testing:
             # If we run out of time, only count the last episode if
@@ -259,9 +257,6 @@ class NeuralAgent(object):
                                      self.last_action,
                                      np.clip(reward, -1, 1),
                                      True)
-
-            logging.info("steps/second: {:.2f}".format(\
-                            self.step_counter/total_time))
 
             if self.batch_counter > 0:
                 self._update_learning_file()
