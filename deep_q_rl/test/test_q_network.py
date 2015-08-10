@@ -113,7 +113,7 @@ class LinearTests(unittest.TestCase):
         net = q_network.DeepQLearner(self.mdp.num_states, 1,
                                      self.mdp.num_actions, 1,
                                      self.discount,
-                                     self.learning_rate, 0, 0, 0,
+                                     self.learning_rate, 0, 0, 0, 0,
                                      freeze_interval, 1, 'linear',
                                      'sgd', 'sum', 1.0)
 
@@ -156,7 +156,7 @@ class LinearTests(unittest.TestCase):
         net = q_network.DeepQLearner(self.mdp.num_states, 1,
                                      self.mdp.num_actions, 1,
                                      self.discount,
-                                     self.learning_rate, 0, 0, 0,
+                                     self.learning_rate, 0, 0, 0, 0,
                                      freeze_interval, 1, 'linear',
                                      'sgd', 'sum', 1.0)
 
@@ -177,7 +177,7 @@ class LinearTests(unittest.TestCase):
         net = q_network.DeepQLearner(self.mdp.num_states, 1,
                                      self.mdp.num_actions, 1,
                                      self.discount,
-                                     self.learning_rate, 0, 0, 0,
+                                     self.learning_rate, 0, 0, 0, 0,
                                      freeze_interval, 1, 'linear',
                                      'sgd', 'sum', 1.0)
 
@@ -202,7 +202,7 @@ class LinearTests(unittest.TestCase):
         net = q_network.DeepQLearner(self.mdp.num_states, 1,
                                      self.mdp.num_actions, 1,
                                      self.discount,
-                                     self.learning_rate, 0, 0, 0,
+                                     self.learning_rate, 0, 0, 0, 0,
                                      freeze_interval, 1, 'linear',
                                      'sgd', 'sum', 1.0)
 
@@ -217,7 +217,7 @@ class LinearTests(unittest.TestCase):
         net = q_network.DeepQLearner(self.mdp.num_states, 1,
                                      self.mdp.num_actions, 1,
                                      self.discount,
-                                     self.learning_rate, 0, 0, 0,
+                                     self.learning_rate, 0, 0, 0, 0,
                                      freeze_interval, 1, 'linear',
                                      'sgd', 'sum', 1.0)
 
@@ -232,7 +232,7 @@ class LinearTests(unittest.TestCase):
         net = q_network.DeepQLearner(self.mdp.num_states, 1,
                                      self.mdp.num_actions, 1,
                                      self.discount,
-                                     self.learning_rate, 0, 0, 0,
+                                     self.learning_rate, 0, 0, 0, 0,
                                      freeze_interval, 1, 'linear',
                                      'sgd', 'sum', 1.0)
 
