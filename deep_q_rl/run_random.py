@@ -1,18 +1,14 @@
 #! /usr/bin/env python
 """
-Execute a training run of deep-Q-Leaning with parameters that
-are consistent with:
-
-Human-level control through deep reinforcement learning.
-Nature, 518(7540):529-533, February 2015
+Execute a training run of using an agent that plays random moves
 
 """
 import sys
-from ale_agent import NeuralAgent
+from ale_agent_random import AgentRandom
 
 from ale_parameters_default import ParametersDefault
-from q_network import DeepQLearner
 import launcher
+
 
 class Parameters(ParametersDefault):
     # ----------------------
@@ -37,7 +33,7 @@ class Parameters(ParametersDefault):
     BATCH_ACCUMULATOR = 'sum'
     LEARNING_RATE = .00025
     DISCOUNT = .99
-    RMS_DECAY = .95 # (Rho)
+    RMS_DECAY = .95  # (Rho)
     RMS_EPSILON = .01
     MOMENTUM = 0 # Note that the "momentum" value mentioned in the Nature
                  # paper is not used in the same way as a traditional momentum
@@ -62,11 +58,9 @@ class Parameters(ParametersDefault):
     RESIZED_HEIGHT = 84
     DEATH_ENDS_EPISODE = 'true'
     MAX_START_NULLOPS = 30
-    DETERMINISTIC = True
-    CUDNN_DETERMINISTIC = False
 
-    AGENT_TYPE = NeuralAgent
-    QLEARNER_TYPE = DeepQLearner
+    AGENT_TYPE = AgentRandom
+    QLEARNER_TYPE = None
 
 if __name__ == "__main__":
     launcher.launch(sys.argv[1:], Parameters, __doc__)

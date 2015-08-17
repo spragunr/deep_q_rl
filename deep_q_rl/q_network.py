@@ -13,49 +13,58 @@ Nature, 518(7540):529-533, February 2015
 Author of Lasagne port: Nissan Pow
 Modifications: Nathan Sprague
 """
+
 import lasagne
 import numpy as np
 import theano
 import theano.tensor as T
+
+from q_learner import QLearner
 from updates import deepmind_rmsprop
 
 
-class DeepQLearner:
+class DeepQLearner(QLearner):
     """
     Deep Q-learning network using Lasagne.
     """
 
-    def __init__(self, input_width, input_height, num_actions,
-                 num_frames, discount, learning_rate, rho,
-                 rms_epsilon, momentum, clip_delta, freeze_interval,
-                 batch_size, network_type, update_rule,
-                 batch_accumulator, rng, input_scale=255.0):
+    def __init__(self,
+                 num_actions,
+                 input_width, input_height, num_frames,
+                 parameters):
 
+        super(DeepQLearner, self).__init__(num_actions,
+                                           input_width, input_height, num_frames,
+                                           parameters)
+
+        self.num_actions = num_actions
+        self.parameters = parameters
         self.input_width = input_width
         self.input_height = input_height
-        self.num_actions = num_actions
         self.num_frames = num_frames
-        self.batch_size = batch_size
-        self.discount = discount
-        self.rho = rho
-        self.lr = learning_rate
-        self.rms_epsilon = rms_epsilon
-        self.momentum = momentum
-        self.clip_delta = clip_delta
-        self.freeze_interval = freeze_interval
-        self.rng = rng
 
+        self.discount = self.parameters.discount
+        self.rho = self.parameters.rms_decay
+        self.lr = self.parameters.learning_rate
+        self.rms_epsilon = self.parameters.rms_epsilon
+        self.momentum = self.parameters.momentum
+        self.clip_delta = self.parameters.clip_delta
+        self.freeze_interval = self.parameters.freeze_interval
+        self.batch_size = self.parameters.batch_size
+        self.update_rule = self.parameters.update_rule
+        self.batch_accumulator = self.parameters.batch_accumulator
+
+        self.rng = parameters.rng
         lasagne.random.set_rng(self.rng)
+
+        self.network_type = self.parameters.network_type
 
         self.update_counter = 0
 
-        self.l_out = self.build_network(network_type, input_width, input_height,
-                                        num_actions, num_frames, batch_size)
+        self.l_out = self._build_network()
         if self.freeze_interval > 0:
-            self.next_l_out = self.build_network(network_type, input_width,
-                                                 input_height, num_actions,
-                                                 num_frames, batch_size)
-            self.reset_q_hat()
+            self.next_l_out = self._build_network()
+            self._reset_q_hat()
 
         states = T.tensor4('states')
         next_states = T.tensor4('next_states')
@@ -64,50 +73,50 @@ class DeepQLearner:
         terminals = T.icol('terminals')
 
         self.states_shared = theano.shared(
-            np.zeros((batch_size, num_frames, input_height, input_width),
+            np.zeros((self.batch_size, num_frames, input_height, input_width),
                      dtype=theano.config.floatX))
 
         self.next_states_shared = theano.shared(
-            np.zeros((batch_size, num_frames, input_height, input_width),
+            np.zeros((self.batch_size, num_frames, input_height, input_width),
                      dtype=theano.config.floatX))
 
         self.rewards_shared = theano.shared(
-            np.zeros((batch_size, 1), dtype=theano.config.floatX),
+            np.zeros((self.batch_size, 1), dtype=theano.config.floatX),
             broadcastable=(False, True))
 
         self.actions_shared = theano.shared(
-            np.zeros((batch_size, 1), dtype='int32'),
+            np.zeros((self.batch_size, 1), dtype='int32'),
             broadcastable=(False, True))
 
         self.terminals_shared = theano.shared(
-            np.zeros((batch_size, 1), dtype='int32'),
+            np.zeros((self.batch_size, 1), dtype='int32'),
             broadcastable=(False, True))
 
-        q_vals = lasagne.layers.get_output(self.l_out, states / input_scale)
-        
+        q_vals = lasagne.layers.get_output(self.l_out, states / self.parameters.input_scale)
+
         if self.freeze_interval > 0:
             next_q_vals = lasagne.layers.get_output(self.next_l_out,
-                                                    next_states / input_scale)
+                                                    next_states / self.parameters.input_scale)
         else:
             next_q_vals = lasagne.layers.get_output(self.l_out,
-                                                    next_states / input_scale)
+                                                    next_states / self.parameters.input_scale)
             next_q_vals = theano.gradient.disconnected_grad(next_q_vals)
 
         target = (rewards +
                   (T.ones_like(terminals) - terminals) *
                   self.discount * T.max(next_q_vals, axis=1, keepdims=True))
-        diff = target - q_vals[T.arange(batch_size),
+        diff = target - q_vals[T.arange(self.batch_size),
                                actions.reshape((-1,))].reshape((-1, 1))
 
         if self.clip_delta > 0:
             diff = diff.clip(-self.clip_delta, self.clip_delta)
 
-        if batch_accumulator == 'sum':
+        if self.batch_accumulator == 'sum':
             loss = T.sum(diff ** 2)
-        elif batch_accumulator == 'mean':
+        elif self.batch_accumulator == 'mean':
             loss = T.mean(diff ** 2)
         else:
-            raise ValueError("Bad accumulator: {}".format(batch_accumulator))
+            raise ValueError("Bad accumulator: {}".format(self.batch_accumulator))
 
         params = lasagne.layers.helper.get_all_params(self.l_out)  
         givens = {
@@ -117,16 +126,17 @@ class DeepQLearner:
             actions: self.actions_shared,
             terminals: self.terminals_shared
         }
-        if update_rule == 'deepmind_rmsprop':
+
+        if self.update_rule == 'deepmind_rmsprop':
             updates = deepmind_rmsprop(loss, params, self.lr, self.rho,
                                        self.rms_epsilon)
-        elif update_rule == 'rmsprop':
+        elif self.update_rule == 'rmsprop':
             updates = lasagne.updates.rmsprop(loss, params, self.lr, self.rho,
                                               self.rms_epsilon)
-        elif update_rule == 'sgd':
+        elif self.update_rule == 'sgd':
             updates = lasagne.updates.sgd(loss, params, self.lr)
         else:
-            raise ValueError("Unrecognized update: {}".format(update_rule))
+            raise ValueError("Unrecognized update: {}".format(self.update_rule))
 
         if self.momentum > 0:
             updates = lasagne.updates.apply_momentum(updates, None,
@@ -137,29 +147,24 @@ class DeepQLearner:
         self._q_vals = theano.function([], q_vals,
                                        givens={states: self.states_shared})
 
-    def build_network(self, network_type, input_width, input_height,
-                      output_dim, num_frames, batch_size):
-        if network_type == "nature_cuda":
-            return self.build_nature_network(input_width, input_height,
-                                             output_dim, num_frames, batch_size)
-        if network_type == "nature_dnn":
-            return self.build_nature_network_dnn(input_width, input_height,
-                                                 output_dim, num_frames,
-                                                 batch_size)
-        elif network_type == "nips_cuda":
-            return self.build_nips_network(input_width, input_height,
-                                           output_dim, num_frames, batch_size)
-        elif network_type == "nips_dnn":
-            return self.build_nips_network_dnn(input_width, input_height,
-                                               output_dim, num_frames,
-                                               batch_size)
-        elif network_type == "linear":
-            return self.build_linear_network(input_width, input_height,
-                                             output_dim, num_frames, batch_size)
+    def _build_network(self):
+        if self.network_type == "nature_cuda":
+            return self._build_nature_network(self.input_width, self.input_height,
+                                             self.num_actions, self.num_frames, self.batch_size)
+        if self.network_type == "nature_dnn":
+            return self._build_nature_network_dnn(self.input_width, self.input_height,
+                                                 self.num_actions, self.num_frames, self.batch_size)
+        elif self.network_type == "nips_cuda":
+            return self._build_nips_network(self.input_width, self.input_height,
+                                           self.num_actions, self.num_frames, self.batch_size)
+        elif self.network_type == "nips_dnn":
+            return self._build_nips_network_dnn(self.input_width, self.input_height,
+                                               self.num_actions, self.num_frames, self.batch_size)
+        elif self.network_type == "linear":
+            return self._build_linear_network(self.input_width, self.input_height,
+                                             self.num_actions, self.num_frames, self.batch_size)
         else:
-            raise ValueError("Unrecognized network: {}".format(network_type))
-
-
+            raise ValueError("Unrecognized network: {}".format(self.network_type))
 
     def train(self, states, actions, rewards, next_states, terminals):
         """
@@ -184,7 +189,7 @@ class DeepQLearner:
         self.terminals_shared.set_value(terminals)
         if (self.freeze_interval > 0 and
             self.update_counter % self.freeze_interval == 0):
-            self.reset_q_hat()
+            self._reset_q_hat()
         loss, _ = self._train()
         self.update_counter += 1
         return np.sqrt(loss)
@@ -202,11 +207,11 @@ class DeepQLearner:
         q_vals = self.q_vals(state)
         return np.argmax(q_vals)
 
-    def reset_q_hat(self):
+    def _reset_q_hat(self):
         all_params = lasagne.layers.helper.get_all_param_values(self.l_out)
         lasagne.layers.helper.set_all_param_values(self.next_l_out, all_params)
 
-    def build_nature_network(self, input_width, input_height, output_dim,
+    def _build_nature_network(self, input_width, input_height, output_dim,
                              num_frames, batch_size):
         """
         Build a large network consistent with the DeepMind Nature paper.
@@ -269,7 +274,7 @@ class DeepQLearner:
         return l_out
 
 
-    def build_nature_network_dnn(self, input_width, input_height, output_dim,
+    def _build_nature_network_dnn(self, input_width, input_height, output_dim,
                                  num_frames, batch_size):
         """
         Build a large network consistent with the DeepMind Nature paper.
@@ -330,7 +335,7 @@ class DeepQLearner:
 
 
 
-    def build_nips_network(self, input_width, input_height, output_dim,
+    def _build_nips_network(self, input_width, input_height, output_dim,
                            num_frames, batch_size):
         """
         Build a network consistent with the 2013 NIPS paper.
@@ -385,7 +390,7 @@ class DeepQLearner:
         return l_out
 
 
-    def build_nips_network_dnn(self, input_width, input_height, output_dim,
+    def _build_nips_network_dnn(self, input_width, input_height, output_dim,
                                num_frames, batch_size):
         """
         Build a network consistent with the 2013 NIPS paper.
@@ -441,7 +446,7 @@ class DeepQLearner:
         return l_out
 
 
-    def build_linear_network(self, input_width, input_height, output_dim,
+    def _build_linear_network(self, input_width, input_height, output_dim,
                              num_frames, batch_size):
         """
         Build a simple linear learner.  Useful for creating
@@ -461,11 +466,3 @@ class DeepQLearner:
         )
 
         return l_out
-
-def main():
-    net = DeepQLearner(84, 84, 16, 4, .99, .00025, .95, .95, 10000,
-                       32, 'nature_cuda')
-
-
-if __name__ == '__main__':
-    main()

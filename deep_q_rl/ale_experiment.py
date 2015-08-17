@@ -48,12 +48,16 @@ class ALEExperiment(object):
         Run the desired number of training epochs, a testing epoch
         is conducted after each training epoch.
         """
+
+        self.agent.initialize(self.ale.getMinimalActionSet())
+
         for epoch in range(1, self.num_epochs + 1):
+            self.agent.start_epoch(epoch)
             self.run_epoch(epoch, self.epoch_length)
             self.agent.finish_epoch(epoch)
 
             if self.test_length > 0:
-                self.agent.start_testing()
+                self.agent.start_testing(epoch)
                 self.run_epoch(epoch, self.test_length, True)
                 self.agent.finish_testing(epoch)
 

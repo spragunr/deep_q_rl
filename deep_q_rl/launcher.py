@@ -4,17 +4,15 @@ training process.  It shouldn't be executed directly; it is used by
 run_nips.py or run_nature.py.
 
 """
+from inspect import ismethod
 import os
 import argparse
 import logging
 import ale_python_interface
-import cPickle
 import numpy as np
 import theano
-
 import ale_experiment
-import ale_agent
-import q_network
+
 
 def process_args(args, defaults, description):
     """
@@ -160,8 +158,15 @@ def process_args(args, defaults, description):
         parameters.freeze_interval = (parameters.freeze_interval //
                                       parameters.update_frequency)
 
-    return parameters
+    # Get default parameters and apply to the parameters namespace when missing
+    defaults_dict = dict((key.lower(), value) for key, value in defaults.__dict__.iteritems()
+                         if not ismethod(value) and not key.startswith('__'))
 
+    for k in defaults_dict:
+        if not hasattr(parameters, k):
+            setattr(parameters, k, defaults_dict[k])
+
+    return parameters
 
 
 def launch(args, defaults, description):
@@ -179,15 +184,15 @@ def launch(args, defaults, description):
     full_rom_path = os.path.join(defaults.BASE_ROM_PATH, rom)
 
     if parameters.deterministic:
-        rng = np.random.RandomState(123456)
+        parameters.rng = np.random.RandomState(123456)
     else:
-        rng = np.random.RandomState()
+        parameters.rng = np.random.RandomState()
 
     if parameters.cudnn_deterministic:
         theano.config.dnn.conv.algo_bwd = 'deterministic'
 
     ale = ale_python_interface.ALEInterface()
-    ale.setInt('random_seed', rng.randint(1000))
+    ale.setInt('random_seed', parameters.rng.randint(1000))
 
     if parameters.display_screen:
         import sys
@@ -202,42 +207,13 @@ def launch(args, defaults, description):
 
     ale.loadROM(full_rom_path)
 
-    num_actions = len(ale.getMinimalActionSet())
+    if parameters.agent_type is None:
+        raise Exception("The agent type has not been specified")
 
-    if parameters.nn_file is None:
-        network = q_network.DeepQLearner(defaults.RESIZED_WIDTH,
-                                         defaults.RESIZED_HEIGHT,
-                                         num_actions,
-                                         parameters.phi_length,
-                                         parameters.discount,
-                                         parameters.learning_rate,
-                                         parameters.rms_decay,
-                                         parameters.rms_epsilon,
-                                         parameters.momentum,
-                                         parameters.clip_delta,
-                                         parameters.freeze_interval,
-                                         parameters.batch_size,
-                                         parameters.network_type,
-                                         parameters.update_rule,
-                                         parameters.batch_accumulator,
-                                         rng)
-    else:
-        handle = open(parameters.nn_file, 'r')
-        network = cPickle.load(handle)
-
-    agent = ale_agent.NeuralAgent(network,
-                                  parameters.epsilon_start,
-                                  parameters.epsilon_min,
-                                  parameters.epsilon_decay,
-                                  parameters.replay_memory_size,
-                                  parameters.experiment_prefix,
-                                  parameters.replay_start_size,
-                                  parameters.update_frequency,
-                                  rng)
-
+    agent = parameters.agent_type(parameters)
     experiment = ale_experiment.ALEExperiment(ale, agent,
-                                              defaults.RESIZED_WIDTH,
-                                              defaults.RESIZED_HEIGHT,
+                                              parameters.resized_width,
+                                              parameters.resized_height,
                                               parameters.resize_method,
                                               parameters.epochs,
                                               parameters.steps_per_epoch,
@@ -245,8 +221,7 @@ def launch(args, defaults, description):
                                               parameters.frame_skip,
                                               parameters.death_ends_episode,
                                               parameters.max_start_nullops,
-                                              rng)
-
+                                              parameters.rng)
 
     experiment.run()
 

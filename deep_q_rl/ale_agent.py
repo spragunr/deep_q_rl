@@ -13,44 +13,34 @@ import logging
 
 import numpy as np
 
+from ale_agent_base import AgentBase
 import ale_data_set
 
 import sys
 sys.setrecursionlimit(10000)
 
-class NeuralAgent(object):
 
-    def __init__(self, q_network, epsilon_start, epsilon_min,
-                 epsilon_decay, replay_memory_size, exp_pref,
-                 replay_start_size, update_frequency, rng):
+class NeuralAgent(AgentBase):
+    def __init__(self, parameters):
+        super(NeuralAgent, self).__init__(parameters)
 
-        self.network = q_network
-        self.epsilon_start = epsilon_start
-        self.epsilon_min = epsilon_min
-        self.epsilon_decay = epsilon_decay
-        self.replay_memory_size = replay_memory_size
-        self.exp_pref = exp_pref
-        self.replay_start_size = replay_start_size
-        self.update_frequency = update_frequency
-        self.rng = rng
+        self.parameters = parameters
+        self.network = None
+        self.action_set = None
+        self.num_actions = -1
 
-        self.phi_length = self.network.num_frames
-        self.image_width = self.network.input_width
-        self.image_height = self.network.input_height
+        self.epsilon_start = self.parameters.epsilon_start
+        self.epsilon_min = self.parameters.epsilon_min
+        self.epsilon_decay = self.parameters.epsilon_decay
+        self.replay_memory_size = self.parameters.replay_memory_size
+        self.exp_pref = self.parameters.experiment_prefix
+        self.replay_start_size = self.parameters.replay_start_size
+        self.update_frequency = self.parameters.update_frequency
+        self.phi_length = self.parameters.phi_length
+        self.image_width = self.parameters.resized_width
+        self.image_height = self.parameters.resized_height
 
-        # CREATE A FOLDER TO HOLD RESULTS
-        time_str = time.strftime("_%m-%d-%H-%M_", time.gmtime())
-        self.exp_dir = self.exp_pref + time_str + \
-                       "{}".format(self.network.lr).replace(".", "p") + "_" \
-                       + "{}".format(self.network.discount).replace(".", "p")
-
-        try:
-            os.stat(self.exp_dir)
-        except OSError:
-            os.makedirs(self.exp_dir)
-
-        self.num_actions = self.network.num_actions
-
+        self.rng = self.parameters.rng
 
         self.data_set = ale_data_set.DataSet(width=self.image_width,
                                              height=self.image_height,
@@ -73,9 +63,10 @@ class NeuralAgent(object):
 
         self.testing = False
 
+        self.current_epoch = 0
         self.episode_counter = 0
         self.batch_counter = 0
-
+        self.total_reward = 0
         self.holdout_data = None
 
         # In order to add an element to the data set we need the
@@ -87,6 +78,25 @@ class NeuralAgent(object):
         self.export_dir = self._create_export_dir()
         self._open_results_file()
         self._open_learning_file()
+
+    def initialize(self, action_set):
+        self.action_set = action_set
+        self.num_actions = len(self.action_set)
+
+        if self.parameters.qlearner_type is None:
+            raise Exception("The QLearner/network type has not been specified")
+
+        if self.parameters.nn_file is None:
+            self.network = self.parameters.qlearner_type(self.num_actions,
+                                                         self.parameters.resized_width,
+                                                         self.parameters.resized_height,
+                                                         self.parameters.phi_length,
+                                                         self.parameters)
+
+        else:
+            handle = open(self.parameters.nn_file, 'r')
+            self.network = cPickle.load(handle)
+
     # region Dumping/Logging
     def _create_export_dir(self):
         # CREATE A FOLDER TO HOLD RESULTS
@@ -132,6 +142,10 @@ class NeuralAgent(object):
             cPickle.dump(self.network, net_file, -1)
 
     # endregion
+
+    def start_epoch(self, epoch):
+        self.current_epoch = epoch
+
     def start_episode(self, observation):
         """
         This method is called once at the beginning of each episode.
@@ -286,7 +300,7 @@ class NeuralAgent(object):
         network_filename = 'network_file_' + str(epoch) + '.pkl'
         self._persist_network(network_filename)
 
-    def start_testing(self):
+    def start_testing(self, epoch):
         self.testing = True
         self.total_reward = 0
         self.episode_counter = 0

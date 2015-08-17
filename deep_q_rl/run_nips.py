@@ -7,11 +7,14 @@ Playing Atari with Deep Reinforcement Learning
 NIPS Deep Learning Workshop 2013
 
 """
+from ale_agent import NeuralAgent
+from ale_parameters_default import ParametersDefault
+from q_network import DeepQLearner
 
 import launcher
 import sys
 
-class Defaults:
+class Parameters(ParametersDefault):
     # ----------------------
     # Experiment Parameters
     # ----------------------
@@ -47,6 +50,7 @@ class Defaults:
     BATCH_SIZE = 32
     NETWORK_TYPE = "nips_dnn"
     FREEZE_INTERVAL = -1
+    INPUT_SCALE = 255.
     REPLAY_START_SIZE = 100
     RESIZE_METHOD = 'crop'
     RESIZED_WIDTH = 84
@@ -56,5 +60,8 @@ class Defaults:
     DETERMINISTIC = True
     CUDNN_DETERMINISTIC = False
 
+    AGENT_TYPE = NeuralAgent
+    QLEARNER_TYPE = DeepQLearner
+
 if __name__ == "__main__":
-    launcher.launch(sys.argv[1:], Defaults, __doc__)
+    launcher.launch(sys.argv[1:], Parameters, __doc__)
