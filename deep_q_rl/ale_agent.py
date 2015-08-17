@@ -73,9 +73,6 @@ class NeuralAgent(object):
 
         self.testing = False
 
-        self._open_results_file()
-        self._open_learning_file()
-
         self.episode_counter = 0
         self.batch_counter = 0
 
@@ -87,15 +84,32 @@ class NeuralAgent(object):
         self.last_img = None
         self.last_action = None
 
+        self.export_dir = self._create_export_dir()
+        self._open_results_file()
+        self._open_learning_file()
+    # region Dumping/Logging
+    def _create_export_dir(self):
+        # CREATE A FOLDER TO HOLD RESULTS
+        time_str = time.strftime("_%m-%d-%H-%M_", time.gmtime())
+        export_dir = self.exp_pref + time_str + \
+                     "{}".format(self.parameters.learning_rate).replace(".", "p") + "_" \
+                     + "{}".format(self.parameters.discount).replace(".", "p")
+        try:
+            os.stat(export_dir)
+        except OSError:
+            os.makedirs(export_dir)
+
+        return export_dir
+
     def _open_results_file(self):
-        logging.info("OPENING " + self.exp_dir + '/results.csv')
-        self.results_file = open(self.exp_dir + '/results.csv', 'w', 0)
+        logging.info("OPENING " + self.export_dir + '/results.csv')
+        self.results_file = open(self.export_dir + '/results.csv', 'w', 0)
         self.results_file.write(\
             'epoch,num_episodes,total_reward,reward_per_epoch,mean_q\n')
         self.results_file.flush()
 
     def _open_learning_file(self):
-        self.learning_file = open(self.exp_dir + '/learning.csv', 'w', 0)
+        self.learning_file = open(self.export_dir + '/learning.csv', 'w', 0)
         self.learning_file.write('mean_loss,epsilon\n')
         self.learning_file.flush()
 
@@ -112,6 +126,12 @@ class NeuralAgent(object):
         self.learning_file.write(out)
         self.learning_file.flush()
 
+    def _persist_network(self, network_filename):
+        full_filename = os.path.join(self.export_dir, network_filename)
+        with open(full_filename, 'w') as net_file:
+            cPickle.dump(self.network, net_file, -1)
+
+    # endregion
     def start_episode(self, observation):
         """
         This method is called once at the beginning of each episode.
@@ -260,15 +280,11 @@ class NeuralAgent(object):
 
             if self.batch_counter > 0:
                 self._update_learning_file()
-                logging.info("average loss: {:.4f}".format(\
-                                np.mean(self.loss_averages)))
-
+                logging.info("average loss: {:.4f}".format(np.mean(self.loss_averages)))
 
     def finish_epoch(self, epoch):
-        net_file = open(self.exp_dir + '/network_file_' + str(epoch) + \
-                        '.pkl', 'w')
-        cPickle.dump(self.network, net_file, -1)
-        net_file.close()
+        network_filename = 'network_file_' + str(epoch) + '.pkl'
+        self._persist_network(network_filename)
 
     def start_testing(self):
         self.testing = True
