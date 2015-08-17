@@ -72,12 +72,15 @@ class ALEExperiment(object):
         steps_left = num_steps
         while steps_left > 0:
             prefix = "testing" if testing else "training"
-            logging.info(prefix + " epoch: " + str(epoch) + " steps_left: " +
-                         str(steps_left))
+
+            t0 = time.time()
             _, num_steps = self.run_episode(steps_left, testing)
-
             steps_left -= num_steps
+            t1 = time.time()
+            total_time = t1 - t0
 
+            logging.info("[{:8}] epoch {:3} | num_steps {:7} steps_left {:7} steps/second: {:>7.2f}".format(
+                prefix, epoch, num_steps, steps_left, num_steps / total_time))
 
     def _init_episode(self):
         """ This method resets the game if needed, performs enough null
@@ -138,8 +141,6 @@ class ALEExperiment(object):
 
         start_lives = self.ale.lives()
 
-        t0 = time.time()
-
         action = self.agent.start_episode(self.get_observation())
         num_steps = 0
         terminal = False
@@ -157,13 +158,7 @@ class ALEExperiment(object):
 
             action = self.agent.step(reward, self.get_observation())
 
-        if not testing:
-            t1 = time.time()
-            total_time = t1 - t0
-            logging.info("steps/second: {:.2f}".format(num_steps/total_time))
-
         return terminal, num_steps
-
 
     def get_observation(self):
         """ Resize and merge the previous two screen images """
