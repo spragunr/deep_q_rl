@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 """Plots data corresponding to Figure 2 in
 
 Playing Atari with Deep Reinforcement Learning

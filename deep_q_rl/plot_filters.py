@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 """ Utility to plot the first layer of convolutions learned by
 the Deep q-network.
 
