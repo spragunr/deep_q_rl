@@ -44,14 +44,14 @@ class NeuralAgent(AgentBase):
 
         self.data_set = ale_data_set.DataSet(width=self.image_width,
                                              height=self.image_height,
-                                             rng=rng,
+                                             rng=self.rng,
                                              max_steps=self.replay_memory_size,
                                              phi_length=self.phi_length)
 
         # just needs to be big enough to create phi's
         self.test_data_set = ale_data_set.DataSet(width=self.image_width,
                                                   height=self.image_height,
-                                                  rng=rng,
+                                                  rng=self.rng,
                                                   max_steps=self.phi_length * 2,
                                                   phi_length=self.phi_length)
         self.epsilon = self.epsilon_start
@@ -187,6 +187,35 @@ class NeuralAgent(AgentBase):
             plt.grid(color='r', linestyle='-', linewidth=1)
         plt.show()
 
+    def _step_testing(self, reward, observation):
+        action = self._choose_action(data_set=self.test_data_set,
+                                     epsilon=.05,
+                                     cur_img=observation,
+                                     reward=np.clip(reward, -1, 1))
+        return action
+
+    def _step_training(self, reward, observation):
+        if len(self.data_set) > self.replay_start_size:
+            self.epsilon = max(self.epsilon_min,
+                               self.epsilon - self.epsilon_rate)
+
+            action = self._choose_action(data_set=self.data_set,
+                                         epsilon=self.epsilon,
+                                         cur_img=observation,
+                                         reward=np.clip(reward, -1, 1))
+
+            if self.step_counter % self.update_frequency == 0:
+                loss = self._do_training()
+                self.batch_counter += 1
+                self.loss_averages.append(loss)
+
+        else: # Still gathering initial random data...
+            action = self._choose_action(data_set=self.data_set,
+                                         epsilon=self.epsilon,
+                                         cur_img=observation,
+                                         reward=np.clip(reward, -1, 1))
+        return action
+
     def step(self, reward, observation):
         """
         This method is called each time step.
@@ -199,37 +228,13 @@ class NeuralAgent(AgentBase):
            An integer action.
 
         """
+        self.episode_reward += reward
+        if self.testing:
+            action = self._step_testing(reward, observation)
+        else:
+            action = self._step_training(reward, observation)
 
         self.step_counter += 1
-
-        #TESTING---------------------------
-        if self.testing:
-            self.episode_reward += reward
-            action = self._choose_action(self.test_data_set, .05,
-                                         observation, np.clip(reward, -1, 1))
-
-        #NOT TESTING---------------------------
-        else:
-
-            if len(self.data_set) > self.replay_start_size:
-                self.epsilon = max(self.epsilon_min,
-                                   self.epsilon - self.epsilon_rate)
-
-                action = self._choose_action(self.data_set, self.epsilon,
-                                             observation,
-                                             np.clip(reward, -1, 1))
-
-                if self.step_counter % self.update_frequency == 0:
-                    loss = self._do_training()
-                    self.batch_counter += 1
-                    self.loss_averages.append(loss)
-
-            else: # Still gathering initial random data...
-                action = self._choose_action(self.data_set, self.epsilon,
-                                             observation,
-                                             np.clip(reward, -1, 1))
-
-
         self.last_action = action
         self.last_img = observation
 
