@@ -41,11 +41,11 @@ def process_args(args, defaults, description):
     parser.add_argument('--experiment-prefix', dest="experiment_prefix",
                         default=None,
                         help='Experiment name prefix '
-                        '(default is the name of the game)')
+                             '(default is the name of the game)')
     parser.add_argument('--frame-skip', dest="frame_skip",
                         default=defaults.FRAME_SKIP, type=int,
                         help='Every how many frames to process '
-                        '(default: %(default)s)')
+                             '(default: %(default)s)')
     parser.add_argument('--repeat-action-probability',
                         dest="repeat_action_probability",
                         default=defaults.REPEAT_ACTION_PROBABILITY, type=float,
@@ -58,7 +58,7 @@ def process_args(args, defaults, description):
                               '(default: %(default)s)'))
     parser.add_argument('--batch-accumulator', dest="batch_accumulator",
                         type=str, default=defaults.BATCH_ACCUMULATOR,
-                        help=('sum|mean (default: %(default)s)'))
+                        help='sum|mean (default: %(default)s)')
     parser.add_argument('--learning-rate', dest="learning_rate",
                         type=float, default=defaults.LEARNING_RATE,
                         help='Learning rate (default: %(default)s)')
@@ -68,9 +68,9 @@ def process_args(args, defaults, description):
     parser.add_argument('--rms-epsilon', dest="rms_epsilon",
                         type=float, default=defaults.RMS_EPSILON,
                         help='Denominator epsilson for rms_prop ' +
-                        '(default: %(default)s)')
+                             '(default: %(default)s)')
     parser.add_argument('--momentum', type=float, default=defaults.MOMENTUM,
-                        help=('Momentum term for Nesterov momentum. '+
+                        help=('Momentum term for Nesterov momentum. ' +
                               '(default: %(default)s)'))
     parser.add_argument('--clip-delta', dest="clip_delta", type=float,
                         default=defaults.CLIP_DELTA,
@@ -110,7 +110,7 @@ def process_args(args, defaults, description):
                               '(default: %(default)s)'))
     parser.add_argument('--update-frequency', dest="update_frequency",
                         type=int, default=defaults.UPDATE_FREQUENCY,
-                        help=('Number of actions before each SGD update. '+
+                        help=('Number of actions before each SGD update. ' +
                               '(default: %(default)s)'))
     parser.add_argument('--replay-start-size', dest="replay_start_size",
                         type=int, default=defaults.REPLAY_START_SIZE,
@@ -137,36 +137,38 @@ def process_args(args, defaults, description):
                         help=('Whether to use deterministic backprop. ' +
                               '(default: %(default)s)'))
 
-    parameters = parser.parse_args(args)
-    if parameters.experiment_prefix is None:
-        name = os.path.splitext(os.path.basename(parameters.rom))[0]
-        parameters.experiment_prefix = name
+    params = parser.parse_args(args)
+    if params.experiment_prefix is None:
+        name = os.path.splitext(os.path.basename(params.rom))[0]
+        params.experiment_prefix = name
 
-    if parameters.death_ends_episode == 'true':
-        parameters.death_ends_episode = True
-    elif parameters.death_ends_episode == 'false':
-        parameters.death_ends_episode = False
+    if params.death_ends_episode == 'true':
+        params.death_ends_episode = True
+    elif params.death_ends_episode == 'false':
+        params.death_ends_episode = False
     else:
         raise ValueError("--death-ends-episode must be true or false")
 
-    if parameters.freeze_interval > 0:
+    if params.freeze_interval > 0:
         # This addresses an inconsistency between the Nature paper and
         # the Deepmind code.  The paper states that the target network
         # update frequency is "measured in the number of parameter
         # updates".  In the code it is actually measured in the number
         # of action choices.
-        parameters.freeze_interval = (parameters.freeze_interval //
-                                      parameters.update_frequency)
+        params.freeze_interval = (params.freeze_interval //
+                                      params.update_frequency)
 
     # Get default parameters and apply to the parameters namespace when missing
-    defaults_dict = dict((key.lower(), value) for key, value in defaults.__dict__.iteritems()
-                         if not ismethod(value) and not key.startswith('__'))
+    defaults_dict = dict(
+        (k.lower(), v) for k, v in defaults.__dict__.iteritems()
+        if not ismethod(v) and not k.startswith('__')
+    )
 
     for k in defaults_dict:
-        if not hasattr(parameters, k):
-            setattr(parameters, k, defaults_dict[k])
+        if not hasattr(params, k):
+            setattr(params, k, defaults_dict[k])
 
-    return parameters
+    return params
 
 
 def launch(args, defaults, description):
@@ -175,56 +177,58 @@ def launch(args, defaults, description):
     """
 
     logging.basicConfig(level=logging.INFO)
-    parameters = process_args(args, defaults, description)
+    params = process_args(args, defaults, description)
 
-    if parameters.rom.endswith('.bin'):
-        rom = parameters.rom
+    if params.rom.endswith('.bin'):
+        rom = params.rom
     else:
-        rom = "%s.bin" % parameters.rom
+        rom = "%s.bin" % params.rom
     full_rom_path = os.path.join(defaults.BASE_ROM_PATH, rom)
 
-    if parameters.deterministic:
-        parameters.rng = np.random.RandomState(123456)
+    if params.deterministic:
+        params.rng = np.random.RandomState(123456)
     else:
-        parameters.rng = np.random.RandomState()
+        params.rng = np.random.RandomState()
 
-    if parameters.cudnn_deterministic:
+    if params.cudnn_deterministic:
         theano.config.dnn.conv.algo_bwd = 'deterministic'
 
     ale = ale_python_interface.ALEInterface()
-    ale.setInt('random_seed', parameters.rng.randint(1000))
+    ale.setInt('random_seed', params.rng.randint(1000))
 
-    if parameters.display_screen:
+    if params.display_screen:
         import sys
         if sys.platform == 'darwin':
             import pygame
             pygame.init()
             ale.setBool('sound', False) # Sound doesn't work on OSX
 
-    ale.setBool('display_screen', parameters.display_screen)
+    ale.setBool('display_screen', params.display_screen)
     ale.setFloat('repeat_action_probability',
-                 parameters.repeat_action_probability)
+                 params.repeat_action_probability)
 
     ale.loadROM(full_rom_path)
 
-    if parameters.agent_type is None:
+    if params.agent_type is None:
         raise Exception("The agent type has not been specified")
 
-    agent = parameters.agent_type(parameters)
-    experiment = ale_experiment.ALEExperiment(ale, agent,
-                                              parameters.resized_width,
-                                              parameters.resized_height,
-                                              parameters.resize_method,
-                                              parameters.epochs,
-                                              parameters.steps_per_epoch,
-                                              parameters.steps_per_test,
-                                              parameters.frame_skip,
-                                              parameters.death_ends_episode,
-                                              parameters.max_start_nullops,
-                                              parameters.rng)
+    agent = params.agent_type(params)
+
+    experiment = ale_experiment.ALEExperiment(
+        ale=ale,
+        agent=agent,
+        resized_width=params.resized_width,
+        resized_height=params.resized_height,
+        resize_method=params.resize_method,
+        num_epochs=params.epochs,
+        epoch_length=params.steps_per_epoch,
+        test_length=params.steps_per_test,
+        frame_skip=params.frame_skip,
+        death_ends_episode=params.death_ends_episode,
+        max_start_nullops=params.max_start_nullops,
+        rng=params.rng)
 
     experiment.run()
-
 
 
 if __name__ == '__main__':

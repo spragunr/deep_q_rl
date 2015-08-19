@@ -17,30 +17,31 @@ from ale_agent_base import AgentBase
 import ale_data_set
 
 import sys
+
 sys.setrecursionlimit(10000)
 
 
 class NeuralAgent(AgentBase):
-    def __init__(self, parameters):
-        super(NeuralAgent, self).__init__(parameters)
+    def __init__(self, params):
+        super(NeuralAgent, self).__init__(params)
 
-        self.parameters = parameters
+        self.params = params
         self.network = None
         self.action_set = None
         self.num_actions = -1
 
-        self.epsilon_start = self.parameters.epsilon_start
-        self.epsilon_min = self.parameters.epsilon_min
-        self.epsilon_decay = self.parameters.epsilon_decay
-        self.replay_memory_size = self.parameters.replay_memory_size
-        self.exp_pref = self.parameters.experiment_prefix
-        self.replay_start_size = self.parameters.replay_start_size
-        self.update_frequency = self.parameters.update_frequency
-        self.phi_length = self.parameters.phi_length
-        self.image_width = self.parameters.resized_width
-        self.image_height = self.parameters.resized_height
+        self.epsilon_start = self.params.epsilon_start
+        self.epsilon_min = self.params.epsilon_min
+        self.epsilon_decay = self.params.epsilon_decay
+        self.replay_memory_size = self.params.replay_memory_size
+        self.exp_pref = self.params.experiment_prefix
+        self.replay_start_size = self.params.replay_start_size
+        self.update_frequency = self.params.update_frequency
+        self.phi_length = self.params.phi_length
+        self.image_width = self.params.resized_width
+        self.image_height = self.params.resized_height
 
-        self.rng = self.parameters.rng
+        self.rng = self.params.rng
 
         self.data_set = ale_data_set.DataSet(width=self.image_width,
                                              height=self.image_height,
@@ -83,18 +84,18 @@ class NeuralAgent(AgentBase):
         self.action_set = action_set
         self.num_actions = len(self.action_set)
 
-        if self.parameters.qlearner_type is None:
+        if self.params.qlearner_type is None:
             raise Exception("The QLearner/network type has not been specified")
 
-        if self.parameters.nn_file is None:
-            self.network = self.parameters.qlearner_type(self.num_actions,
-                                                         self.parameters.resized_width,
-                                                         self.parameters.resized_height,
-                                                         self.parameters.phi_length,
-                                                         self.parameters)
-
+        if self.params.nn_file is None:
+            self.network = self.params.qlearner_type(
+                num_actions=self.num_actions,
+                input_width=self.params.resized_width,
+                input_height=self.params.resized_height,
+                num_frames=self.params.phi_length,
+                params=self.params)
         else:
-            handle = open(self.parameters.nn_file, 'r')
+            handle = open(self.params.nn_file, 'r')
             self.network = cPickle.load(handle)
 
     # region Dumping/Logging
@@ -102,8 +103,9 @@ class NeuralAgent(AgentBase):
         # CREATE A FOLDER TO HOLD RESULTS
         time_str = time.strftime("_%m-%d-%H-%M_", time.gmtime())
         export_dir = self.exp_pref + time_str + \
-                     "{}".format(self.parameters.learning_rate).replace(".", "p") + "_" \
-                     + "{}".format(self.parameters.discount).replace(".", "p")
+                     "{}".format(self.params.learning_rate).replace(".", "p") \
+                     + "_" + \
+                     "{}".format(self.params.discount).replace(".", "p")
         try:
             os.stat(export_dir)
         except OSError:
@@ -114,7 +116,7 @@ class NeuralAgent(AgentBase):
     def _open_results_file(self):
         logging.info("OPENING " + self.export_dir + '/results.csv')
         self.results_file = open(self.export_dir + '/results.csv', 'w', 0)
-        self.results_file.write(\
+        self.results_file.write(
             'epoch,num_episodes,total_reward,reward_per_epoch,mean_q\n')
         self.results_file.flush()
 
@@ -124,9 +126,11 @@ class NeuralAgent(AgentBase):
         self.learning_file.flush()
 
     def _update_results_file(self, epoch, num_episodes, holdout_sum):
-        out = "{},{},{},{},{}\n".format(epoch, num_episodes, self.total_reward,
+        out = "{},{},{},{},{}\n".format(epoch, num_episodes,
+                                        self.total_reward,
                                         self.total_reward / float(num_episodes),
                                         holdout_sum)
+
         self.results_file.write(out)
         self.results_file.flush()
 
@@ -174,15 +178,14 @@ class NeuralAgent(AgentBase):
 
         return return_action
 
-
     def _show_phis(self, phi1, phi2):
         import matplotlib.pyplot as plt
         for p in range(self.phi_length):
-            plt.subplot(2, self.phi_length, p+1)
+            plt.subplot(2, self.phi_length, p + 1)
             plt.imshow(phi1[p, :, :], interpolation='none', cmap="gray")
             plt.grid(color='r', linestyle='-', linewidth=1)
         for p in range(self.phi_length):
-            plt.subplot(2, self.phi_length, p+5)
+            plt.subplot(2, self.phi_length, p + 5)
             plt.imshow(phi2[p, :, :], interpolation='none', cmap="gray")
             plt.grid(color='r', linestyle='-', linewidth=1)
         plt.show()
@@ -209,7 +212,7 @@ class NeuralAgent(AgentBase):
                 self.batch_counter += 1
                 self.loss_averages.append(loss)
 
-        else: # Still gathering initial random data...
+        else:  # Still gathering initial random data...
             action = self._choose_action(data_set=self.data_set,
                                          epsilon=self.epsilon,
                                          cur_img=observation,
@@ -262,11 +265,10 @@ class NeuralAgent(AgentBase):
         differently.
         """
         states, actions, rewards, next_states, terminals = \
-                                self.data_set.random_batch(
-                                    self.network.batch_size)
+            self.data_set.random_batch(
+                self.network.batch_size)
         return self.network.train(states, actions, rewards,
                                   next_states, terminals)
-
 
     def end_episode(self, reward, terminal=True):
         """
@@ -299,7 +301,8 @@ class NeuralAgent(AgentBase):
 
             if self.batch_counter > 0:
                 self._update_learning_file()
-                logging.info("average loss: {:.4f}".format(np.mean(self.loss_averages)))
+                logging.info(
+                    "average loss: {:.4f}".format(np.mean(self.loss_averages)))
 
     def finish_epoch(self, epoch):
         network_filename = 'network_file_' + str(epoch) + '.pkl'

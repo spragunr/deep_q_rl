@@ -87,19 +87,19 @@ class LinearTests(unittest.TestCase):
 
         # Divide the desired learning rate by two, because loss is
         # defined as L^2, not 1/2 L^2.
-        self.parameters = ParametersDefault()
-        self.parameters.discount = .5
-        self.parameters.learning_rate = .1 / 2.0
-        self.parameters.rms_decay = 0
-        self.parameters.rms_epsilon = 0
-        self.parameters.momentum = 0
-        self.parameters.clip_delta = 0
-        self.parameters.freeze_interval = 0
-        self.parameters.batch_size = 1
-        self.parameters.network_type = 'linear'
-        self.parameters.update_rule = 'sgd'
-        self.parameters.batch_accumulator = 'sum'
-        self.parameters.input_scale = 1.0
+        self.params = ParametersDefault()
+        self.params.discount = .5
+        self.params.learning_rate = .1 / 2.0
+        self.params.rms_decay = 0
+        self.params.rms_epsilon = 0
+        self.params.momentum = 0
+        self.params.clip_delta = 0
+        self.params.freeze_interval = 0
+        self.params.batch_size = 1
+        self.params.network_type = 'linear'
+        self.params.update_rule = 'sgd'
+        self.params.batch_accumulator = 'sum'
+        self.params.input_scale = 1.0
 
         self.mdp = ChainMDP()
 
@@ -122,11 +122,13 @@ class LinearTests(unittest.TestCase):
                       terminal)
 
     def test_updates_sgd_no_freeze(self):
-        self.parameters.freeze_interval = -1
+        self.params.freeze_interval = -1
 
-        net = q_network.DeepQLearner(input_width=self.mdp.num_states, input_height=1,
-                                     num_actions=self.mdp.num_actions, num_frames=1,
-                                     parameters=self.parameters)
+        net = q_network.DeepQLearner(input_width=self.mdp.num_states,
+                                     input_height=1,
+                                     num_actions=self.mdp.num_actions,
+                                     num_frames=1,
+                                     params=self.params)
 
         mdp = self.mdp
 
@@ -162,10 +164,12 @@ class LinearTests(unittest.TestCase):
                                            [0, 0]])
 
     def test_convergence_sgd_no_freeze(self):
-        self.parameters.freeze_interval = -1
-        net = q_network.DeepQLearner(input_width=self.mdp.num_states, input_height=1,
-                                     num_actions=self.mdp.num_actions, num_frames=1,
-                                     parameters=self.parameters)
+        self.params.freeze_interval = -1
+        net = q_network.DeepQLearner(input_width=self.mdp.num_states,
+                                     input_height=1,
+                                     num_actions=self.mdp.num_actions,
+                                     num_frames=1,
+                                     params=self.params)
 
         self.train(net, 1000)
 
@@ -178,10 +182,12 @@ class LinearTests(unittest.TestCase):
         correctly. Otherwise the random initialization of the value of the
         terminal state will propagate back.
         """
-        self.parameters.freeze_interval = -1
-        net = q_network.DeepQLearner(input_width=self.mdp.num_states, input_height=1,
-                                     num_actions=self.mdp.num_actions, num_frames=1,
-                                     parameters=self.parameters)
+        self.params.freeze_interval = -1
+        net = q_network.DeepQLearner(input_width=self.mdp.num_states,
+                                     input_height=1,
+                                     num_actions=self.mdp.num_actions,
+                                     num_frames=1,
+                                     params=self.params)
 
         # Randomize initial q-values:
         params = lasagne.layers.helper.get_all_param_values(net.l_out)
@@ -197,10 +203,12 @@ class LinearTests(unittest.TestCase):
                                            [.25, 1.0]], 3)
 
     def test_convergence_sgd_permanent_freeze(self):
-        self.parameters.freeze_interval = 1000000
-        net = q_network.DeepQLearner(input_width=self.mdp.num_states, input_height=1,
-                                     num_actions=self.mdp.num_actions, num_frames=1,
-                                     parameters=self.parameters)
+        self.params.freeze_interval = 1000000
+        net = q_network.DeepQLearner(input_width=self.mdp.num_states,
+                                     input_height=1,
+                                     num_actions=self.mdp.num_actions,
+                                     num_frames=1,
+                                     params=self.params)
 
         self.train(net, 1000)
 
@@ -209,10 +217,12 @@ class LinearTests(unittest.TestCase):
                                            [0, 1.0], [0., 0.]], 3)
 
     def test_convergence_sgd_frequent_freeze(self):
-        self.parameters.freeze_interval = 2
-        net = q_network.DeepQLearner(input_width=self.mdp.num_states, input_height=1,
-                                     num_actions=self.mdp.num_actions, num_frames=1,
-                                     parameters=self.parameters)
+        self.params.freeze_interval = 2
+        net = q_network.DeepQLearner(input_width=self.mdp.num_states,
+                                     input_height=1,
+                                     num_actions=self.mdp.num_actions,
+                                     num_frames=1,
+                                     params=self.params)
 
         self.train(net, 1000)
 
@@ -221,12 +231,14 @@ class LinearTests(unittest.TestCase):
                                            [.25, 1.0], [0., 0.]], 3)
 
     def test_convergence_sgd_one_freeze(self):
-        self.parameters.freeze_interval = 500
-        net = q_network.DeepQLearner(input_width=self.mdp.num_states, input_height=1,
-                                     num_actions=self.mdp.num_actions, num_frames=1,
-                                     parameters=self.parameters)
+        self.params.freeze_interval = 500
+        net = q_network.DeepQLearner(input_width=self.mdp.num_states,
+                                     input_height=1,
+                                     num_actions=self.mdp.num_actions,
+                                     num_frames=1,
+                                     params=self.params)
 
-        self.train(net, self.parameters.freeze_interval * 2)
+        self.train(net, self.params.freeze_interval * 2)
 
         numpy.testing.assert_almost_equal(self.all_q_vals(net),
                                           [[.7, 0], [.35, .5],

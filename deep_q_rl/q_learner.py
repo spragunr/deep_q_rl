@@ -7,7 +7,7 @@ class QLearner:
     def __init__(self,
                  num_actions,
                  input_width, input_height, num_frames,
-                 parameters):
+                 params):
         pass
 
     @abstractmethod

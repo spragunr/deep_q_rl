@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 class AgentBase(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, parameters):
+    def __init__(self, params):
         pass
 
     @abstractmethod

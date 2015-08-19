@@ -14,6 +14,7 @@ from q_network import DeepQLearner
 import launcher
 import sys
 
+
 class Parameters(ParametersDefault):
     # ----------------------
     # Experiment Parameters

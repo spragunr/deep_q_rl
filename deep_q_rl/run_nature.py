@@ -14,6 +14,7 @@ from ale_parameters_default import ParametersDefault
 from q_network import DeepQLearner
 import launcher
 
+
 class Parameters(ParametersDefault):
     # ----------------------
     # Experiment Parameters

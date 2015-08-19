@@ -39,7 +39,7 @@ class ALEExperiment(object):
                                        self.height, self.width),
                                       dtype=np.uint8)
 
-        self.terminal_lol = False # Most recent episode ended on a loss of life
+        self.terminal_lol = False  # Most recent episode ended on a loss of life
         self.max_start_nullops = max_start_nullops
         self.rng = rng
 
@@ -72,7 +72,7 @@ class ALEExperiment(object):
         testing - True if this Epoch is used for testing and not training
 
         """
-        self.terminal_lol = False # Make sure each epoch starts with a reset.
+        self.terminal_lol = False  # Make sure each epoch starts with a reset.
         steps_left = num_steps
         while steps_left > 0:
             prefix = "testing" if testing else "training"
@@ -83,8 +83,13 @@ class ALEExperiment(object):
             t1 = time.time()
             total_time = t1 - t0
 
-            logging.info("[{:8}] epoch {:3} | num_steps {:7} steps_left {:7} steps/second: {:>7.2f}".format(
-                prefix, epoch, num_steps, steps_left, num_steps / total_time))
+            logging.info("[{:8}] epoch {:3} | num_steps {:7} " \
+                         "steps_left {:7} steps/second: {:>7.2f}"
+                         .format(prefix,
+                                 epoch,
+                                 num_steps,
+                                 steps_left,
+                                 num_steps / total_time))
 
     def _init_episode(self):
         """ This method resets the game if needed, performs enough null
@@ -98,13 +103,12 @@ class ALEExperiment(object):
             if self.max_start_nullops > 0:
                 random_actions = self.rng.randint(0, self.max_start_nullops+1)
                 for _ in range(random_actions):
-                    self._act(0) # Null action
+                    self._act(0)  # Null action
 
         # Make sure the screen buffer is filled at the beginning of
         # each episode...
         self._act(0)
         self._act(0)
-
 
     def _act(self, action):
         """Perform the indicated action for a single frame, return the
@@ -188,7 +192,7 @@ class ALEExperiment(object):
             # Crop the part we want
             crop_y_cutoff = resize_height - CROP_OFFSET - self.resized_height
             cropped = resized[crop_y_cutoff:
-                              crop_y_cutoff + self.resized_height, :]
+            crop_y_cutoff + self.resized_height, :]
 
             return cropped
         elif self.resize_method == 'scale':
@@ -197,4 +201,3 @@ class ALEExperiment(object):
                               interpolation=cv2.INTER_LINEAR)
         else:
             raise ValueError('Unrecognized image resize method.')
-
