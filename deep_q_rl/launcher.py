@@ -170,6 +170,14 @@ def launch(args, defaults, description):
 
     ale = ale_python_interface.ALEInterface()
     ale.setInt('random_seed', 123)
+
+    if parameters.display_screen:
+        import sys
+        if sys.platform == 'darwin':
+            import pygame
+            pygame.init()
+            ale.setBool('sound', False) # Sound doesn't work on OSX
+
     ale.setBool('display_screen', parameters.display_screen)
     ale.setFloat('repeat_action_probability',
                  parameters.repeat_action_probability)
