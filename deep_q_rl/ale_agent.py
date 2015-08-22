@@ -11,7 +11,6 @@ import cPickle
 import time
 import logging
 
-import random
 import numpy as np
 
 import ale_data_set
@@ -20,11 +19,10 @@ import sys
 sys.setrecursionlimit(10000)
 
 class NeuralAgent(object):
-    randGenerator = random.Random()
 
     def __init__(self, q_network, epsilon_start, epsilon_min,
                  epsilon_decay, replay_memory_size, exp_pref,
-                 replay_start_size, update_frequency):
+                 replay_start_size, update_frequency, rng):
 
         self.network = q_network
         self.epsilon_start = epsilon_start
@@ -34,6 +32,8 @@ class NeuralAgent(object):
         self.exp_pref = exp_pref
         self.replay_start_size = replay_start_size
         self.update_frequency = update_frequency
+        self.rng = rng
+        
         self.phi_length = self.network.num_frames
         self.image_width = self.network.input_width
         self.image_height = self.network.input_height
@@ -52,13 +52,13 @@ class NeuralAgent(object):
         self.num_actions = self.network.num_actions
 
 
-        self.data_set = ale_data_set.DataSet(width=self.image_width,
+        self.data_set = ale_data_set.DataSet(rng, width=self.image_width,
                                              height=self.image_height,
                                              max_steps=self.replay_memory_size,
                                              phi_length=self.phi_length)
 
         # just needs to be big enough to create phi's
-        self.test_data_set = ale_data_set.DataSet(width=self.image_width,
+        self.test_data_set = ale_data_set.DataSet(rng, width=self.image_width,
                                                   height=self.image_height,
                                                   max_steps=self.phi_length * 2,
                                                   phi_length=self.phi_length)
@@ -131,7 +131,7 @@ class NeuralAgent(object):
         self.loss_averages = []
 
         self.start_time = time.time()
-        return_action = self.randGenerator.randint(0, self.num_actions-1)
+        return_action = self.rng.randint(0, self.num_actions-1)
 
         self.last_action = return_action
 
@@ -211,7 +211,7 @@ class NeuralAgent(object):
             phi = data_set.phi(cur_img)
             action = self.network.choose_action(phi, epsilon)
         else:
-            action = self.randGenerator.randint(0, self.num_actions - 1)
+            action = self.rng.randint(0, self.num_actions - 1)
 
         return action
 

@@ -6,7 +6,6 @@ Author: Nathan Sprague
 """
 import logging
 import numpy as np
-import random
 import cv2
 
 # Number of rows to crop off the bottom of the (downsampled) screen.
@@ -18,7 +17,7 @@ CROP_OFFSET = 8
 class ALEExperiment(object):
     def __init__(self, ale, agent, resized_width, resized_height,
                  resize_method, num_epochs, epoch_length, test_length,
-                 frame_skip, death_ends_episode, max_start_nullops):
+                 frame_skip, death_ends_episode, max_start_nullops, rng):
         self.ale = ale
         self.agent = agent
         self.num_epochs = num_epochs
@@ -42,6 +41,7 @@ class ALEExperiment(object):
 
         self.terminal_lol = False # Most recent episode ended on a loss of life
         self.max_start_nullops = max_start_nullops
+        self.rng = rng
 
     def run(self):
         """
@@ -89,7 +89,7 @@ class ALEExperiment(object):
             self.ale.reset_game()
 
             if self.max_start_nullops > 0:
-                random_actions = random.randint(0, self.max_start_nullops)
+                random_actions = self.rng.randint(0, self.max_start_nullops)
                 for _ in range(random_actions):
                     self._act(0) # Null action
 
@@ -152,7 +152,6 @@ class ALEExperiment(object):
                 break
 
             action = self.agent.step(reward, self.get_observation())
-
         return terminal, num_steps
 
 

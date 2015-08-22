@@ -9,6 +9,8 @@ import argparse
 import logging
 import ale_python_interface
 import cPickle
+import numpy as np
+import theano
 
 import ale_experiment
 import ale_agent
@@ -128,6 +130,13 @@ def process_args(args, defaults, description):
                         type=int, default=defaults.MAX_START_NULLOPS,
                         help=('Maximum number of null-ops at the start ' +
                               'of games. (default: %(default)s)'))
+    parser.add_argument('--deterministic', dest="deterministic",
+                        type=bool, default=defaults.DETERMINISTIC,
+                        help=('Whether to use deterministic parameters ' +
+                              'for learning.'))
+    parser.add_argument('--cudnn_deterministic', dest="cudnn_deterministic",
+                        type=bool, default=defaults.CUDNN_DETERMINISTIC,
+                        help=('Whether to use deterministic backprop.'))
 
     parameters = parser.parse_args(args)
     if parameters.experiment_prefix is None:
@@ -157,7 +166,7 @@ def process_args(args, defaults, description):
 def launch(args, defaults, description):
     """
     Execute a complete training run.
-    """
+    """    
 
     logging.basicConfig(level=logging.INFO)
     parameters = process_args(args, defaults, description)
@@ -167,9 +176,17 @@ def launch(args, defaults, description):
     else:
         rom = "%s.bin" % parameters.rom
     full_rom_path = os.path.join(defaults.BASE_ROM_PATH, rom)
+    
+    if parameters.deterministic:
+        rng = np.random.RandomState(123456)
+    else:
+        rng = np.random.RandomState()
+        
+    if parameters.cudnn_deterministic:
+        theano.config.dnn.conv.algo_bwd = 'deterministic'
 
     ale = ale_python_interface.ALEInterface()
-    ale.setInt('random_seed', 123)
+    ale.setInt('random_seed', rng.randint(1000))
 
     if parameters.display_screen:
         import sys
@@ -185,6 +202,8 @@ def launch(args, defaults, description):
     ale.loadROM(full_rom_path)
 
     num_actions = len(ale.getMinimalActionSet())
+    
+    
 
     if parameters.nn_file is None:
         network = q_network.DeepQLearner(defaults.RESIZED_WIDTH,
@@ -201,7 +220,8 @@ def launch(args, defaults, description):
                                          parameters.batch_size,
                                          parameters.network_type,
                                          parameters.update_rule,
-                                         parameters.batch_accumulator)
+                                         parameters.batch_accumulator,
+                                         rng)
     else:
         handle = open(parameters.nn_file, 'r')
         network = cPickle.load(handle)
@@ -213,7 +233,8 @@ def launch(args, defaults, description):
                                   parameters.replay_memory_size,
                                   parameters.experiment_prefix,
                                   parameters.replay_start_size,
-                                  parameters.update_frequency)
+                                  parameters.update_frequency,
+                                  rng)
 
     experiment = ale_experiment.ALEExperiment(ale, agent,
                                               defaults.RESIZED_WIDTH,
@@ -224,7 +245,8 @@ def launch(args, defaults, description):
                                               parameters.steps_per_test,
                                               parameters.frame_skip,
                                               parameters.death_ends_episode,
-                                              parameters.max_start_nullops)
+                                              parameters.max_start_nullops,
+                                              rng)
 
 
     experiment.run()

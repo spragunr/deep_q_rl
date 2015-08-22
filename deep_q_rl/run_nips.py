@@ -53,6 +53,8 @@ class Defaults:
     RESIZED_HEIGHT = 84
     DEATH_ENDS_EPISODE = 'false'
     MAX_START_NULLOPS = 0
+    DETERMINISTIC = True
+    CUDNN_DETERMINISTIC = False
 
 if __name__ == "__main__":
     launcher.launch(sys.argv[1:], Defaults, __doc__)
