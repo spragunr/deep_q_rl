@@ -33,8 +33,6 @@ class ALEExperiment(object):
 
         self.buffer_length = 2
         self.buffer_count = 0
-        self.screen_rgb = np.empty((self.height, self.width, 3),
-                                   dtype=np.uint8)
         self.screen_buffer = np.empty((self.buffer_length,
                                        self.height, self.width),
                                       dtype=np.uint8)
@@ -107,9 +105,9 @@ class ALEExperiment(object):
         """
         reward = self.ale.act(action)
         index = self.buffer_count % self.buffer_length
-        self.ale.getScreenRGB(self.screen_rgb)
-        cv2.cvtColor(self.screen_rgb, cv2.COLOR_RGB2GRAY,
-                     dst=self.screen_buffer[index, ...])
+
+        self.ale.getScreenGrayscale(self.screen_buffer[index, ...])
+
         self.buffer_count += 1
         return reward
 
