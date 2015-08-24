@@ -18,7 +18,7 @@ class DataSet(object):
     """ Class represents a data set that stores a fixed-length history.
     """
 
-    def __init__(self, width, height, max_steps=1000, phi_length=4,
+    def __init__(self, width, height, rng, max_steps=1000, phi_length=4,
                  capacity=None):
         """  Construct a DataSet.
 
@@ -26,9 +26,11 @@ class DataSet(object):
             width,height - image size
             max_steps - the length of history to store.
             phi_length - number of images to concatenate into a state.
+            rng        - initialized numpy random number generator.
             capacity - amount of memory to allocate (just for debugging.)
         """
 
+        self.rng = rng
         self.count = 0
         self.max_steps = max_steps
         self.phi_length = phi_length
@@ -145,7 +147,7 @@ class DataSet(object):
 
         # Grab random samples until we have enough
         while count < batch_size:
-            index = np.random.randint(self._min_index(), self._max_index()+1)
+            index = self.rng.randint(self._min_index(), self._max_index()+1)
             end_index = index + self.phi_length - 1
             if self.single_episode(index, end_index):
                 states[count, ...] = self._make_phi(index)

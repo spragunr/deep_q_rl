@@ -29,7 +29,7 @@ class DeepQLearner:
                  num_frames, discount, learning_rate, rho,
                  rms_epsilon, momentum, clip_delta, freeze_interval,
                  batch_size, network_type, update_rule,
-                 batch_accumulator, input_scale=255.0):
+                 batch_accumulator, rng, input_scale=255.0):
 
         self.input_width = input_width
         self.input_height = input_height
@@ -43,6 +43,9 @@ class DeepQLearner:
         self.momentum = momentum
         self.clip_delta = clip_delta
         self.freeze_interval = freeze_interval
+        self.rng = rng
+
+        lasagne.random.set_rng(self.rng)
 
         self.update_counter = 0
 
@@ -81,6 +84,7 @@ class DeepQLearner:
             broadcastable=(False, True))
 
         q_vals = lasagne.layers.get_output(self.l_out, states / input_scale)
+        
         if self.freeze_interval > 0:
             next_q_vals = lasagne.layers.get_output(self.next_l_out,
                                                     next_states / input_scale)
@@ -105,7 +109,7 @@ class DeepQLearner:
         else:
             raise ValueError("Bad accumulator: {}".format(batch_accumulator))
 
-        params = lasagne.layers.helper.get_all_params(self.l_out)
+        params = lasagne.layers.helper.get_all_params(self.l_out)  
         givens = {
             states: self.states_shared,
             next_states: self.next_states_shared,
@@ -193,8 +197,8 @@ class DeepQLearner:
         return self._q_vals()[0]
 
     def choose_action(self, state, epsilon):
-        if np.random.rand() < epsilon:
-            return np.random.randint(0, self.num_actions)
+        if self.rng.rand() < epsilon:
+            return self.rng.randint(0, self.num_actions)
         q_vals = self.q_vals(state)
         return np.argmax(q_vals)
 
