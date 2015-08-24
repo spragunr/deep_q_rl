@@ -33,7 +33,7 @@ class NeuralAgent(object):
         self.replay_start_size = replay_start_size
         self.update_frequency = update_frequency
         self.rng = rng
-        
+
         self.phi_length = self.network.num_frames
         self.image_width = self.network.input_width
         self.image_height = self.network.input_height
@@ -52,14 +52,16 @@ class NeuralAgent(object):
         self.num_actions = self.network.num_actions
 
 
-        self.data_set = ale_data_set.DataSet(rng, width=self.image_width,
+        self.data_set = ale_data_set.DataSet(width=self.image_width,
                                              height=self.image_height,
+                                             rng=rng,
                                              max_steps=self.replay_memory_size,
                                              phi_length=self.phi_length)
 
         # just needs to be big enough to create phi's
-        self.test_data_set = ale_data_set.DataSet(rng, width=self.image_width,
+        self.test_data_set = ale_data_set.DataSet(width=self.image_width,
                                                   height=self.image_height,
+                                                  rng=rng,
                                                   max_steps=self.phi_length * 2,
                                                   phi_length=self.phi_length)
         self.epsilon = self.epsilon_start
@@ -131,7 +133,7 @@ class NeuralAgent(object):
         self.loss_averages = []
 
         self.start_time = time.time()
-        return_action = self.rng.randint(0, self.num_actions-1)
+        return_action = self.rng.randint(0, self.num_actions)
 
         self.last_action = return_action
 
@@ -211,7 +213,7 @@ class NeuralAgent(object):
             phi = data_set.phi(cur_img)
             action = self.network.choose_action(phi, epsilon)
         else:
-            action = self.rng.randint(0, self.num_actions - 1)
+            action = self.rng.randint(0, self.num_actions)
 
         return action
 

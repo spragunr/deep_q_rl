@@ -89,7 +89,7 @@ class ALEExperiment(object):
             self.ale.reset_game()
 
             if self.max_start_nullops > 0:
-                random_actions = self.rng.randint(0, self.max_start_nullops)
+                random_actions = self.rng.randint(0, self.max_start_nullops+1)
                 for _ in range(random_actions):
                     self._act(0) # Null action
 

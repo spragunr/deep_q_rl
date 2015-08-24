@@ -18,7 +18,7 @@ class DataSet(object):
     """ Class represents a data set that stores a fixed-length history.
     """
 
-    def __init__(self, rng, width, height, max_steps=1000, phi_length=4,
+    def __init__(self, width, height, rng, max_steps=1000, phi_length=4,
                  capacity=None):
         """  Construct a DataSet.
 
@@ -26,6 +26,7 @@ class DataSet(object):
             width,height - image size
             max_steps - the length of history to store.
             phi_length - number of images to concatenate into a state.
+            rng        - initialized numpy random number generator.
             capacity - amount of memory to allocate (just for debugging.)
         """
 
