@@ -290,7 +290,7 @@ class NeuralAgent(object):
         holdout_sum = 0
         if self.holdout_data is not None:
             for i in range(holdout_size):
-                holdout_sum += np.mean(
+                holdout_sum += np.max(
                     self.network.q_vals(self.holdout_data[i, ...]))
 
         self._update_results_file(epoch, self.episode_counter,
