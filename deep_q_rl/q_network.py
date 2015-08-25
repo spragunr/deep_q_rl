@@ -44,7 +44,7 @@ class DeepQLearner:
         self.clip_delta = clip_delta
         self.freeze_interval = freeze_interval
         self.rng = rng
-        
+
         lasagne.random.set_rng(self.rng)
 
         self.update_counter = 0
