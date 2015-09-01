@@ -13,55 +13,46 @@ import logging
 
 import numpy as np
 
+from ale_agent_base import AgentBase
 import ale_data_set
 
 import sys
+
 sys.setrecursionlimit(10000)
 
-class NeuralAgent(object):
 
-    def __init__(self, q_network, epsilon_start, epsilon_min,
-                 epsilon_decay, replay_memory_size, exp_pref,
-                 replay_start_size, update_frequency, rng):
+class NeuralAgent(AgentBase):
+    def __init__(self, params):
+        super(NeuralAgent, self).__init__(params)
 
-        self.network = q_network
-        self.epsilon_start = epsilon_start
-        self.epsilon_min = epsilon_min
-        self.epsilon_decay = epsilon_decay
-        self.replay_memory_size = replay_memory_size
-        self.exp_pref = exp_pref
-        self.replay_start_size = replay_start_size
-        self.update_frequency = update_frequency
-        self.rng = rng
+        self.params = params
+        self.network = None
+        self.action_set = None
+        self.num_actions = -1
 
-        self.phi_length = self.network.num_frames
-        self.image_width = self.network.input_width
-        self.image_height = self.network.input_height
+        self.epsilon_start = self.params.epsilon_start
+        self.epsilon_min = self.params.epsilon_min
+        self.epsilon_decay = self.params.epsilon_decay
+        self.replay_memory_size = self.params.replay_memory_size
+        self.exp_pref = self.params.experiment_prefix
+        self.replay_start_size = self.params.replay_start_size
+        self.update_frequency = self.params.update_frequency
+        self.phi_length = self.params.phi_length
+        self.image_width = self.params.resized_width
+        self.image_height = self.params.resized_height
 
-        # CREATE A FOLDER TO HOLD RESULTS
-        time_str = time.strftime("_%m-%d-%H-%M_", time.gmtime())
-        self.exp_dir = self.exp_pref + time_str + \
-                       "{}".format(self.network.lr).replace(".", "p") + "_" \
-                       + "{}".format(self.network.discount).replace(".", "p")
-
-        try:
-            os.stat(self.exp_dir)
-        except OSError:
-            os.makedirs(self.exp_dir)
-
-        self.num_actions = self.network.num_actions
-
+        self.rng = self.params.rng
 
         self.data_set = ale_data_set.DataSet(width=self.image_width,
                                              height=self.image_height,
-                                             rng=rng,
+                                             rng=self.rng,
                                              max_steps=self.replay_memory_size,
                                              phi_length=self.phi_length)
 
         # just needs to be big enough to create phi's
         self.test_data_set = ale_data_set.DataSet(width=self.image_width,
                                                   height=self.image_height,
-                                                  rng=rng,
+                                                  rng=self.rng,
                                                   max_steps=self.phi_length * 2,
                                                   phi_length=self.phi_length)
         self.epsilon = self.epsilon_start
@@ -73,12 +64,10 @@ class NeuralAgent(object):
 
         self.testing = False
 
-        self._open_results_file()
-        self._open_learning_file()
-
+        self.current_epoch = 0
         self.episode_counter = 0
         self.batch_counter = 0
-
+        self.total_reward = 0
         self.holdout_data = None
 
         # In order to add an element to the data set we need the
@@ -87,22 +76,61 @@ class NeuralAgent(object):
         self.last_img = None
         self.last_action = None
 
+        self.export_dir = self._create_export_dir()
+        self._open_results_file()
+        self._open_learning_file()
+
+    def initialize(self, action_set):
+        self.action_set = action_set
+        self.num_actions = len(self.action_set)
+
+        if self.params.qlearner_type is None:
+            raise Exception("The QLearner/network type has not been specified")
+
+        if self.params.nn_file is None:
+            self.network = self.params.qlearner_type(
+                num_actions=self.num_actions,
+                input_width=self.params.resized_width,
+                input_height=self.params.resized_height,
+                num_frames=self.params.phi_length,
+                params=self.params)
+        else:
+            handle = open(self.params.nn_file, 'r')
+            self.network = cPickle.load(handle)
+
+    # region Dumping/Logging
+    def _create_export_dir(self):
+        # CREATE A FOLDER TO HOLD RESULTS
+        time_str = time.strftime("_%m-%d-%H-%M_", time.gmtime())
+        export_dir = self.exp_pref + time_str + \
+                     "{}".format(self.params.learning_rate).replace(".", "p") \
+                     + "_" + \
+                     "{}".format(self.params.discount).replace(".", "p")
+        try:
+            os.stat(export_dir)
+        except OSError:
+            os.makedirs(export_dir)
+
+        return export_dir
+
     def _open_results_file(self):
-        logging.info("OPENING " + self.exp_dir + '/results.csv')
-        self.results_file = open(self.exp_dir + '/results.csv', 'w', 0)
-        self.results_file.write(\
+        logging.info("OPENING " + self.export_dir + '/results.csv')
+        self.results_file = open(self.export_dir + '/results.csv', 'w', 0)
+        self.results_file.write(
             'epoch,num_episodes,total_reward,reward_per_epoch,mean_q\n')
         self.results_file.flush()
 
     def _open_learning_file(self):
-        self.learning_file = open(self.exp_dir + '/learning.csv', 'w', 0)
+        self.learning_file = open(self.export_dir + '/learning.csv', 'w', 0)
         self.learning_file.write('mean_loss,epsilon\n')
         self.learning_file.flush()
 
     def _update_results_file(self, epoch, num_episodes, holdout_sum):
-        out = "{},{},{},{},{}\n".format(epoch, num_episodes, self.total_reward,
+        out = "{},{},{},{},{}\n".format(epoch, num_episodes,
+                                        self.total_reward,
                                         self.total_reward / float(num_episodes),
                                         holdout_sum)
+
         self.results_file.write(out)
         self.results_file.flush()
 
@@ -111,6 +139,16 @@ class NeuralAgent(object):
                                self.epsilon)
         self.learning_file.write(out)
         self.learning_file.flush()
+
+    def _persist_network(self, network_filename):
+        full_filename = os.path.join(self.export_dir, network_filename)
+        with open(full_filename, 'w') as net_file:
+            cPickle.dump(self.network, net_file, -1)
+
+    # endregion
+
+    def start_epoch(self, epoch):
+        self.current_epoch = epoch
 
     def start_episode(self, observation):
         """
@@ -132,7 +170,6 @@ class NeuralAgent(object):
         # We report the mean loss for every epoch.
         self.loss_averages = []
 
-        self.start_time = time.time()
         return_action = self.rng.randint(0, self.num_actions)
 
         self.last_action = return_action
@@ -141,18 +178,46 @@ class NeuralAgent(object):
 
         return return_action
 
-
     def _show_phis(self, phi1, phi2):
         import matplotlib.pyplot as plt
         for p in range(self.phi_length):
-            plt.subplot(2, self.phi_length, p+1)
+            plt.subplot(2, self.phi_length, p + 1)
             plt.imshow(phi1[p, :, :], interpolation='none', cmap="gray")
             plt.grid(color='r', linestyle='-', linewidth=1)
         for p in range(self.phi_length):
-            plt.subplot(2, self.phi_length, p+5)
+            plt.subplot(2, self.phi_length, p + 5)
             plt.imshow(phi2[p, :, :], interpolation='none', cmap="gray")
             plt.grid(color='r', linestyle='-', linewidth=1)
         plt.show()
+
+    def _step_testing(self, reward, observation):
+        action = self._choose_action(data_set=self.test_data_set,
+                                     epsilon=.05,
+                                     cur_img=observation,
+                                     reward=np.clip(reward, -1, 1))
+        return action
+
+    def _step_training(self, reward, observation):
+        if len(self.data_set) > self.replay_start_size:
+            self.epsilon = max(self.epsilon_min,
+                               self.epsilon - self.epsilon_rate)
+
+            action = self._choose_action(data_set=self.data_set,
+                                         epsilon=self.epsilon,
+                                         cur_img=observation,
+                                         reward=np.clip(reward, -1, 1))
+
+            if self.step_counter % self.update_frequency == 0:
+                loss = self._do_training()
+                self.batch_counter += 1
+                self.loss_averages.append(loss)
+
+        else:  # Still gathering initial random data...
+            action = self._choose_action(data_set=self.data_set,
+                                         epsilon=self.epsilon,
+                                         cur_img=observation,
+                                         reward=np.clip(reward, -1, 1))
+        return action
 
     def step(self, reward, observation):
         """
@@ -166,37 +231,13 @@ class NeuralAgent(object):
            An integer action.
 
         """
+        self.episode_reward += reward
+        if self.testing:
+            action = self._step_testing(reward, observation)
+        else:
+            action = self._step_training(reward, observation)
 
         self.step_counter += 1
-
-        #TESTING---------------------------
-        if self.testing:
-            self.episode_reward += reward
-            action = self._choose_action(self.test_data_set, .05,
-                                         observation, np.clip(reward, -1, 1))
-
-        #NOT TESTING---------------------------
-        else:
-
-            if len(self.data_set) > self.replay_start_size:
-                self.epsilon = max(self.epsilon_min,
-                                   self.epsilon - self.epsilon_rate)
-
-                action = self._choose_action(self.data_set, self.epsilon,
-                                             observation,
-                                             np.clip(reward, -1, 1))
-
-                if self.step_counter % self.update_frequency == 0:
-                    loss = self._do_training()
-                    self.batch_counter += 1
-                    self.loss_averages.append(loss)
-
-            else: # Still gathering initial random data...
-                action = self._choose_action(self.data_set, self.epsilon,
-                                             observation,
-                                             np.clip(reward, -1, 1))
-
-
         self.last_action = action
         self.last_img = observation
 
@@ -224,11 +265,10 @@ class NeuralAgent(object):
         differently.
         """
         states, actions, rewards, next_states, terminals = \
-                                self.data_set.random_batch(
-                                    self.network.batch_size)
+            self.data_set.random_batch(
+                self.network.batch_size)
         return self.network.train(states, actions, rewards,
                                   next_states, terminals)
-
 
     def end_episode(self, reward, terminal=True):
         """
@@ -244,7 +284,6 @@ class NeuralAgent(object):
 
         self.episode_reward += reward
         self.step_counter += 1
-        total_time = time.time() - self.start_time
 
         if self.testing:
             # If we run out of time, only count the last episode if
@@ -260,22 +299,16 @@ class NeuralAgent(object):
                                      np.clip(reward, -1, 1),
                                      True)
 
-            logging.info("steps/second: {:.2f}".format(\
-                            self.step_counter/total_time))
-
             if self.batch_counter > 0:
                 self._update_learning_file()
-                logging.info("average loss: {:.4f}".format(\
-                                np.mean(self.loss_averages)))
-
+                logging.info(
+                    "average loss: {:.4f}".format(np.mean(self.loss_averages)))
 
     def finish_epoch(self, epoch):
-        net_file = open(self.exp_dir + '/network_file_' + str(epoch) + \
-                        '.pkl', 'w')
-        cPickle.dump(self.network, net_file, -1)
-        net_file.close()
+        network_filename = 'network_file_' + str(epoch) + '.pkl'
+        self._persist_network(network_filename)
 
-    def start_testing(self):
+    def start_testing(self, epoch):
         self.testing = True
         self.total_reward = 0
         self.episode_counter = 0

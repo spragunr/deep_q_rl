@@ -11,6 +11,8 @@ import cv2
 # Number of rows to crop off the bottom of the (downsampled) screen.
 # This is appropriate for breakout, but it may need to be modified
 # for other games.
+import time
+
 CROP_OFFSET = 8
 
 
@@ -37,7 +39,7 @@ class ALEExperiment(object):
                                        self.height, self.width),
                                       dtype=np.uint8)
 
-        self.terminal_lol = False # Most recent episode ended on a loss of life
+        self.terminal_lol = False  # Most recent episode ended on a loss of life
         self.max_start_nullops = max_start_nullops
         self.rng = rng
 
@@ -46,12 +48,16 @@ class ALEExperiment(object):
         Run the desired number of training epochs, a testing epoch
         is conducted after each training epoch.
         """
+
+        self.agent.initialize(self.ale.getMinimalActionSet())
+
         for epoch in range(1, self.num_epochs + 1):
+            self.agent.start_epoch(epoch)
             self.run_epoch(epoch, self.epoch_length)
             self.agent.finish_epoch(epoch)
 
             if self.test_length > 0:
-                self.agent.start_testing()
+                self.agent.start_testing(epoch)
                 self.run_epoch(epoch, self.test_length, True)
                 self.agent.finish_testing(epoch)
 
@@ -66,16 +72,24 @@ class ALEExperiment(object):
         testing - True if this Epoch is used for testing and not training
 
         """
-        self.terminal_lol = False # Make sure each epoch starts with a reset.
+        self.terminal_lol = False  # Make sure each epoch starts with a reset.
         steps_left = num_steps
         while steps_left > 0:
             prefix = "testing" if testing else "training"
-            logging.info(prefix + " epoch: " + str(epoch) + " steps_left: " +
-                         str(steps_left))
+
+            t0 = time.time()
             _, num_steps = self.run_episode(steps_left, testing)
-
             steps_left -= num_steps
+            t1 = time.time()
+            total_time = t1 - t0
 
+            logging.info("[{:8}] epoch {:3} | num_steps {:7} " \
+                         "steps_left {:7} steps/second: {:>7.2f}"
+                         .format(prefix,
+                                 epoch,
+                                 num_steps,
+                                 steps_left,
+                                 num_steps / total_time))
 
     def _init_episode(self):
         """ This method resets the game if needed, performs enough null
@@ -89,13 +103,12 @@ class ALEExperiment(object):
             if self.max_start_nullops > 0:
                 random_actions = self.rng.randint(0, self.max_start_nullops+1)
                 for _ in range(random_actions):
-                    self._act(0) # Null action
+                    self._act(0)  # Null action
 
         # Make sure the screen buffer is filled at the beginning of
         # each episode...
         self._act(0)
         self._act(0)
-
 
     def _act(self, action):
         """Perform the indicated action for a single frame, return the
@@ -138,6 +151,8 @@ class ALEExperiment(object):
 
         action = self.agent.start_episode(self.get_observation())
         num_steps = 0
+        terminal = False
+
         while True:
             reward = self._step(self.min_action_set[action])
             self.terminal_lol = (self.death_ends_episode and not testing and
@@ -150,8 +165,8 @@ class ALEExperiment(object):
                 break
 
             action = self.agent.step(reward, self.get_observation())
-        return terminal, num_steps
 
+        return terminal, num_steps
 
     def get_observation(self):
         """ Resize and merge the previous two screen images """
@@ -177,7 +192,7 @@ class ALEExperiment(object):
             # Crop the part we want
             crop_y_cutoff = resize_height - CROP_OFFSET - self.resized_height
             cropped = resized[crop_y_cutoff:
-                              crop_y_cutoff + self.resized_height, :]
+            crop_y_cutoff + self.resized_height, :]
 
             return cropped
         elif self.resize_method == 'scale':
@@ -186,4 +201,3 @@ class ALEExperiment(object):
                               interpolation=cv2.INTER_LINEAR)
         else:
             raise ValueError('Unrecognized image resize method.')
-

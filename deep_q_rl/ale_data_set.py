@@ -14,6 +14,7 @@ import theano
 
 floatX = theano.config.floatX
 
+
 class DataSet(object):
     """ Class represents a data set that stores a fixed-length history.
     """
@@ -34,7 +35,7 @@ class DataSet(object):
         self.count = 0
         self.max_steps = max_steps
         self.phi_length = phi_length
-        if capacity == None:
+        if capacity is None:
             self.capacity = max_steps + int(np.ceil(max_steps * .1))
         else:
             self.capacity = capacity
