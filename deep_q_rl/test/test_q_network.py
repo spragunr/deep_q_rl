@@ -7,7 +7,7 @@ import theano
 import unittest
 import numpy.testing
 import lasagne
-from deep_q_rl.ale_parameters_default import ParametersDefault
+from deep_q_rl.run_nature import Parameters
 
 import deep_q_rl.q_network as q_network
 
@@ -87,19 +87,21 @@ class LinearTests(unittest.TestCase):
 
         # Divide the desired learning rate by two, because loss is
         # defined as L^2, not 1/2 L^2.
-        self.params = ParametersDefault()
+        self.params = Parameters()
         self.params.discount = .5
         self.params.learning_rate = .1 / 2.0
         self.params.rms_decay = 0
         self.params.rms_epsilon = 0
         self.params.momentum = 0
         self.params.clip_delta = 0
-        self.params.freeze_interval = 0
+        self.params.freeze_interval = -1
         self.params.batch_size = 1
         self.params.network_type = 'linear'
         self.params.update_rule = 'sgd'
         self.params.batch_accumulator = 'sum'
         self.params.input_scale = 1.0
+        self.params.rng = np.random.RandomState(123456)
+
 
         self.mdp = ChainMDP()
 
