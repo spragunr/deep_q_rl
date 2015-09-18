@@ -10,7 +10,6 @@ Nature, 518(7540):529-533, February 2015
 import sys
 from ale_agent import NeuralAgent
 
-from ale_parameters_default import ParametersDefault
 from q_network import DeepQLearner
 import launcher
 

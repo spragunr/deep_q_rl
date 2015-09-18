@@ -8,7 +8,6 @@ NIPS Deep Learning Workshop 2013
 
 """
 from ale_agent import NeuralAgent
-from ale_parameters_default import ParametersDefault
 from q_network import DeepQLearner
 
 import launcher
