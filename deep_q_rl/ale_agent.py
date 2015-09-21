@@ -120,9 +120,6 @@ class NeuralAgent(AgentBase):
         param_list = [getattr(self.params, attr) \
             for attr in dir(self.params) \
             if isinstance(getattr(self.params, attr), (int, float, str))]
-        print(param_list, type(param_list))
-        for x in param_list:
-            print(type(x), isinstance(x, (int, float, str)))
         json.dump(param_list, self.params_file)
         self.params_file.close()
 
