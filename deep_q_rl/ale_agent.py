@@ -117,10 +117,11 @@ class NeuralAgent(AgentBase):
 
     def _open_params_file(self):
         self.params_file = open(self.export_dir + '/params.json', 'w')
-        param_list = [getattr(self.params, attr) \
-            for attr in dir(self.params) \
-            if isinstance(getattr(self.params, attr), (int, float, str))]
-        json.dump(param_list, self.params_file)
+        param_dict = {k:v for k, v in self.params.__dict__.items() \
+                      if "__" not in k \
+                      and isinstance(v, (int, float, str, bool))}
+        print(param_dict)
+        json.dump(param_dict, self.params_file, indent=4)
         self.params_file.close()
 
     def _open_results_file(self):
