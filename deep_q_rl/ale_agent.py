@@ -10,6 +10,7 @@ import os
 import cPickle
 import time
 import logging
+import json
 
 import numpy as np
 
@@ -77,6 +78,7 @@ class NeuralAgent(AgentBase):
         self.last_action = None
 
         self.export_dir = self._create_export_dir()
+        self._open_params_file()
         self._open_results_file()
         self._open_learning_file()
 
@@ -112,6 +114,17 @@ class NeuralAgent(AgentBase):
             os.makedirs(export_dir)
 
         return export_dir
+
+    def _open_params_file(self):
+        self.params_file = open(self.export_dir + '/params.json', 'w')
+        param_list = [getattr(self.params, attr) \
+            for attr in dir(self.params) \
+            if isinstance(getattr(self.params, attr), (int, float, str))]
+        print(param_list, type(param_list))
+        for x in param_list:
+            print(type(x), isinstance(x, (int, float, str)))
+        json.dump(param_list, self.params_file)
+        self.params_file.close()
 
     def _open_results_file(self):
         logging.info("OPENING " + self.export_dir + '/results.csv')
