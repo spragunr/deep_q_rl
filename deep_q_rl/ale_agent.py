@@ -120,7 +120,6 @@ class NeuralAgent(AgentBase):
         param_dict = {k:v for k, v in self.params.__dict__.items() \
                       if "__" not in k \
                       and isinstance(v, (int, float, str, bool))}
-        print(param_dict)
         json.dump(param_dict, self.params_file, indent=4)
         self.params_file.close()
 
