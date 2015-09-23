@@ -27,19 +27,22 @@ actions, and rewards.
         # TODO: Specify capacity in number of state transitions, not
         # number of saved time steps.
 
+        # Store arguments.
+        self.width = width
+        self.height = height
+        self.max_steps = max_steps
+        self.phi_length = phi_length
+        self.rng = rng
+
         # Allocate the circular buffers and indices.
-        imgs = np.zeros((max_steps, height, width), dtype='uint8')
-        actions = np.zeros(max_steps, dtype='int32')
-        rewards = np.zeros(max_steps, dtype=floatX)
-        terminal = np.zeros(max_steps, dtype='bool')
+        self.imgs = np.zeros((max_steps, height, width), dtype='uint8')
+        self.actions = np.zeros(max_steps, dtype='int32')
+        self.rewards = np.zeros(max_steps, dtype=floatX)
+        self.terminal = np.zeros(max_steps, dtype='bool')
 
-        bottom = 0
-        top = 0
-        size = 0
-
-        # Store arguments and circular buffers as member variables.
-        self.__dict__.update(locals())
-        del self.self
+        self.bottom = 0
+        self.top = 0
+        self.size = 0
 
     def add_sample(self, img, action, reward, terminal):
         """Add a time step record.
@@ -81,7 +84,9 @@ actions, and rewards.
         indexes = np.arange(self.top - self.phi_length + 1, self.top)
 
         phi = np.empty((self.phi_length, self.height, self.width), dtype=floatX)
-        phi[0:self.phi_length - 1] = self.imgs.take(indexes, axis=0, mode='wrap')
+        phi[0:self.phi_length - 1] = self.imgs.take(indexes,
+                                                    axis=0,
+                                                    mode='wrap')
         phi[-1] = img
         return phi
 
@@ -91,12 +96,18 @@ next_states for batch_size randomly chosen state transitions.
 
         """
         # Allocate the response.
-        states = np.zeros((batch_size, self.phi_length, self.height, self.width),
+        states = np.zeros((batch_size,
+                           self.phi_length,
+                           self.height,
+                           self.width),
                           dtype='uint8')
         actions = np.zeros((batch_size, 1), dtype='int32')
         rewards = np.zeros((batch_size, 1), dtype=floatX)
         terminal = np.zeros((batch_size, 1), dtype='bool')
-        next_states = np.zeros((batch_size, self.phi_length, self.height, self.width),
+        next_states = np.zeros((batch_size,
+                                self.phi_length,
+                                self.height,
+                                self.width),
                                dtype='uint8')
 
         count = 0
@@ -124,7 +135,9 @@ next_states for batch_size randomly chosen state transitions.
             actions[count] = self.actions.take(end_index, mode='wrap')
             rewards[count] = self.rewards.take(end_index, mode='wrap')
             terminal[count] = self.terminal.take(end_index, mode='wrap')
-            next_states[count] = self.imgs.take(transition_indices, axis=0, mode='wrap')
+            next_states[count] = self.imgs.take(transition_indices,
+                                                axis=0,
+                                                mode='wrap')
             count += 1
 
         return states, actions, rewards, next_states, terminal
