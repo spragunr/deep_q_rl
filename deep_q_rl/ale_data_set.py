@@ -17,13 +17,13 @@ actions, and rewards.
 
     """
     def __init__(self, width, height, rng, max_steps=1000, phi_length=4):
-        """Construct a NewDataSet.
+        """Construct a DataSet.
 
         Arguments:
-            width, height -- image size
-            max_steps -- the number of time steps to store
-            phi_length -- number of images to concatenate into a state
-            rng -- initialized numpy random number generator, used to
+            width, height - image size
+            max_steps - the number of time steps to store
+            phi_length - number of images to concatenate into a state
+            rng - initialized numpy random number generator, used to
             choose random minibatches
 
         """
@@ -93,8 +93,6 @@ actions, and rewards.
 next_states for batch_size randomly chosen state transitions.
 
         """
-        count = 0
-
         # Allocate the response.
         states = np.zeros((batch_size, self.phi_length, self.height, self.width),
                           dtype='uint8')
@@ -104,6 +102,7 @@ next_states for batch_size randomly chosen state transitions.
         next_states = np.zeros((batch_size, self.phi_length, self.height, self.width),
                                dtype='uint8')
 
+        count = 0
         while count < batch_size:
             # Randomly choose a time step from the replay memory.
             index = self.rng.randint(self.bottom,
@@ -123,7 +122,7 @@ next_states for batch_size randomly chosen state transitions.
             if np.any(self.terminal.take(initial_indices[0:-1], mode='wrap')):
                 continue
 
-            # Add the state transition.
+            # Add the state transition to the response.dy
             states[count] = self.imgs.take(initial_indices, axis=0, mode='wrap')
             actions[count] = self.actions.take(end_index, mode='wrap')
             rewards[count] = self.rewards.take(end_index, mode='wrap')
