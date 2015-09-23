@@ -15,6 +15,199 @@ import theano
 floatX = theano.config.floatX
 
 class DataSet(object):
+    def __init__(self, width, height, rng, max_steps=1000, phi_length=4,
+                 capacity=None):
+        self.rng = rng
+        self.ods = OldDataSet(width, height, rng, max_steps, phi_length, capacity)
+        self.nds = NewDataSet(width, height, rng, max_steps, phi_length)
+        self.otime = 0.
+        self.ntime = 0.
+        self.call_count = 0
+
+    def __len__(self):
+        self.rng_state = self.rng.get_state()
+        self.otime -= time.time()
+        r1 = len(self.ods)
+        self.otime += time.time()
+        self.rng.set_state(self.rng_state)
+        self.ntime -= time.time()
+        r2 = len(self.nds)
+        self.ntime += time.time()
+        self.call_count += 1
+        if not self.check_vals(r1, r2):
+            print 'BAD'
+            print r1
+            print r2
+            import sys
+            sys.exit(1)
+        if self.call_count % 1000 == 0:
+            print 'count: %d, otime: %f, ntime: %f' % (self.call_count, self.otime, self.ntime)
+        return r1
+
+    def __getattr__(self, name):
+        def wrapper(*args, **kwargs):
+            m1 = getattr(self.ods, name)
+            m2 = getattr(self.nds, name)
+            self.rng_state = self.rng.get_state()
+            self.otime -= time.time()
+            r1 = m1(*args)
+            self.otime += time.time()
+            self.rng.set_state(self.rng_state)
+            self.ntime -= time.time()
+            r2 = m2(*args)
+            self.ntime += time.time()
+            self.call_count += 1
+            if not self.check_vals(r1, r2):
+                print 'BAD'
+                print r1
+                print r2
+                import sys
+                sys.exit(1)
+            if self.call_count % 1000 == 0:
+                print 'count: %d, otime: %f, ntime: %f' % (self.call_count, self.otime, self.ntime)
+            return r1
+        return wrapper
+
+    def check_vals(self, v1, v2):
+        if isinstance(v1, tuple):
+            if not (isinstance(v2, tuple) and len(v1) == len(v2)):
+                print 'bad tuple match'
+                print type(v1), type(v2)
+                print len(v1), len(v2)
+                return False
+            for i in range(len(v1)):
+                if not self.check_vals(v1[i], v2[i]):
+                    return False 
+            return True
+        elif isinstance(v1, np.ndarray):
+            if not isinstance(v2, np.ndarray):
+                print 'not ndarray'
+                return False
+            if not np.array_equal(v1, v2):
+                print 'arrays unequal'
+                print v1
+                print v2
+                return False
+            return True
+        else:
+            return v1 == v2
+
+class NewDataSet(object):
+    """A replay memory consisting of circular buffers for observed images,
+actions, and rewards.
+
+    """
+    def __init__(self, width, height, rng, capacity=1000, phi_length=4):
+        """Construct a NewDataSet.
+
+        Arguments:
+            width, height -- image size
+            capacity -- the length of history to store
+            phi_length -- number of images to concatenate into a state
+            rng -- initialized numpy random number generator, used to
+            choose random minibatches
+
+        """
+        # TODO: Specify capacity in number of state transitions, not
+        # number of saved time steps.
+
+        # Allocate the circular buffers and indices.
+        imgs = np.zeros((capacity, height, width), dtype='uint8')
+        actions = np.zeros(capacity, dtype='int32')
+        rewards = np.zeros(capacity, dtype=floatX)
+        terminal = np.zeros(capacity, dtype='bool')
+
+        bottom = 0
+        top = 0
+        size = 0
+
+        # Store arguments and circular buffers as member variables.
+        self.__dict__.update(locals())
+        del self.self
+
+    def add_sample(self, img, action, reward, terminal):
+        """Add a time step record.
+
+        Arguments:
+            img -- observed image
+            action -- action chosen by the agent
+            reward -- reward received after taking the action
+            terminal -- boolean indicating whether the episode ended
+            after this time step
+        """
+        self.imgs[self.top] = img
+        self.actions[self.top] = action
+        self.rewards[self.top] = reward
+        self.terminal[self.top] = terminal
+
+        if self.size == self.capacity:
+            self.bottom = (self.bottom + 1) % self.capacity
+        else:
+            self.size += 1
+        self.top = (self.top + 1) % self.capacity
+
+    def __len__(self):
+        """Return an approximate count of stored state transitions."""
+        # TODO: Properly account for indices which can't be used, as in
+        # random_batch's check.
+        return max(0, self.size - self.phi_length)
+
+    def phi(self, img):
+        """Return a phi (sequence of image frames), using the last phi_length -
+        1, plus img."""
+        indexes = np.arange(self.top - self.phi_length + 1, self.top)
+
+        phi = np.empty((self.phi_length, self.height, self.width), dtype=floatX)
+        phi[0:self.phi_length - 1] = self.imgs.take(indexes, axis=0, mode='wrap')
+        phi[-1] = img
+        return phi
+
+    def random_batch(self, batch_size):
+        """Return corresponding states, actions, rewards, terminal status, and
+next_states for batch_size randomly chosen state transitions.
+
+        """
+        count = 0
+
+        # Allocate the response.
+        states = np.zeros((batch_size, self.phi_length, self.height, self.width),
+                          dtype='uint8')
+        actions = np.zeros((batch_size, 1), dtype='int32')
+        rewards = np.zeros((batch_size, 1), dtype=floatX)
+        terminal = np.zeros((batch_size, 1), dtype='bool')
+        next_states = np.zeros((batch_size, self.phi_length, self.height, self.width),
+                               dtype='uint8')
+
+        while count < batch_size:
+            # Randomly choose a time step from the replay memory.
+            index = self.rng.randint(self.bottom,
+                                     self.bottom + self.size - self.phi_length)
+
+            initial_indices = np.arange(index, index + self.phi_length)
+            transition_indices = initial_indices + 1
+            end_index = index + self.phi_length - 1
+            
+            # Check that the initial state corresponds entirely to a
+            # single episode, meaning none but the last frame may be
+            # terminal. If the last frame of the initial state is
+            # terminal, then the last frame of the transitioned state
+            # will actually be the first frame of a new episode, which
+            # the Q learner recognizes and handles correctly during
+            # training by zeroing the discounted future reward estimate.
+            if np.any(self.terminal.take(initial_indices[0:-1], mode='wrap')):
+                continue
+
+            # Add the state transition.
+            states[count] = self.imgs.take(initial_indices, axis=0, mode='wrap')
+            actions[count] = self.actions.take(end_index, mode='wrap')
+            rewards[count] = self.rewards.take(end_index, mode='wrap')
+            terminal[count] = self.terminal.take(end_index, mode='wrap')
+            next_states[count] = self.imgs.take(transition_indices, axis=0, mode='wrap')
+            count += 1
+
+        return states, actions, rewards, next_states, terminal
+
+class OldDataSet(object):
     """ Class represents a data set that stores a fixed-length history.
     """
 
