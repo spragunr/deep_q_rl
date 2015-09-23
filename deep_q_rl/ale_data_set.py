@@ -71,9 +71,16 @@ actions, and rewards.
         # random_batch's check.
         return max(0, self.size - self.phi_length)
 
+    def last_phi(self):
+        """Return the most recent phi (sequence of image frames)."""
+        indexes = np.arange(self.top - self.phi_length, self.top)
+        return self.imgs.take(indexes, axis=0, mode='wrap')
+
     def phi(self, img):
         """Return a phi (sequence of image frames), using the last phi_length -
-        1, plus img."""
+        1, plus img.
+
+        """
         indexes = np.arange(self.top - self.phi_length + 1, self.top)
 
         phi = np.empty((self.phi_length, self.height, self.width), dtype=floatX)
@@ -131,7 +138,9 @@ next_states for batch_size randomly chosen state transitions.
 
 def simple_tests():
     np.random.seed(222)
-    dataset = DataSet(width=2, height=3, max_steps=6, phi_length=4, capacity=7)
+    dataset = DataSet(width=2, height=3,
+                      rng=np.random.RandomState(42),
+                      max_steps=6, phi_length=4)
     for i in range(10):
         img = np.random.randint(0, 256, size=(3, 2))
         action = np.random.randint(16)
@@ -141,11 +150,11 @@ def simple_tests():
             terminal = True
         print 'img', img
         dataset.add_sample(img, action, reward, terminal)
-        print "S", dataset.states
+        print "I", dataset.imgs
         print "A", dataset.actions
         print "R", dataset.rewards
         print "T", dataset.terminal
-        print "COUNT", "CAPACITY", dataset.count, dataset.capacity
+        print "SIZE", dataset.size
         print
     print "LAST PHI", dataset.last_phi()
     print
@@ -154,7 +163,9 @@ def simple_tests():
 
 def speed_tests():
 
-    dataset = DataSet(width=80, height=80, max_steps=20000, phi_length=4)
+    dataset = DataSet(width=80, height=80,
+                      rng=np.random.RandomState(42),
+                      max_steps=20000, phi_length=4)
 
     img = np.random.randint(0, 256, size=(80, 80))
     action = np.random.randint(16)
@@ -177,7 +188,9 @@ def speed_tests():
 
 def trivial_tests():
 
-    dataset = DataSet(width=2, height=1, max_steps=3, phi_length=2)
+    dataset = DataSet(width=2, height=1,
+                      rng=np.random.RandomState(42),
+                      max_steps=3, phi_length=2)
 
     img1 = np.array([[1, 1]], dtype='uint8')
     img2 = np.array([[2, 2]], dtype='uint8')
@@ -191,8 +204,12 @@ def trivial_tests():
 
 
 def max_size_tests():
-    dataset1 = DataSet(width=3, height=4, max_steps=10, phi_length=4)
-    dataset2 = DataSet(width=3, height=4, max_steps=1000, phi_length=4)
+    dataset1 = DataSet(width=3, height=4,
+                      rng=np.random.RandomState(42),
+                      max_steps=10, phi_length=4)
+    dataset2 = DataSet(width=3, height=4,
+                      rng=np.random.RandomState(42),
+                      max_steps=1000, phi_length=4)
     for i in range(100):
         img = np.random.randint(0, 256, size=(4, 3))
         action = np.random.randint(16)
@@ -207,69 +224,11 @@ def max_size_tests():
         print "passed"
 
 
-def test_iterator():
-    dataset = DataSet(width=2, height=1, max_steps=10, phi_length=2)
-
-    img1 = np.array([[1, 1]], dtype='uint8')
-    img2 = np.array([[2, 2]], dtype='uint8')
-    img3 = np.array([[3, 3]], dtype='uint8')
-    img4 = np.array([[3, 3]], dtype='uint8')
-
-    dataset.add_sample(img1, 1, 1, False)
-    dataset.add_sample(img2, 2, 2, False)
-    dataset.add_sample(img3, 3, 3, False)
-    dataset.add_sample(img4, 4, 4, True)
-
-    for s, a, r, t, ns in dataset.batch_iterator(2):
-        print "s ", s, "a ",a, "r ",r,"t ", t,"ns ", ns
-
-
-def test_random_batch():
-    dataset1 = DataSet(width=3, height=4, max_steps=50, phi_length=4)
-    dataset2 = DataSet(width=3, height=4, max_steps=50, phi_length=4,
-                       capacity=2000)
-    np.random.seed(hash(time.time()))
-
-    for i in range(100):
-        img = np.random.randint(0, 256, size=(4, 3))
-        action = np.random.randint(16)
-        reward = np.random.random()
-        terminal = False
-        if np.random.random() < .05:
-            terminal = True
-
-        dataset1.add_sample(img, action, reward, terminal)
-        dataset2.add_sample(img, action, reward, terminal)
-        if i > 10:
-            np.random.seed(i*11 * i)
-            states1, actions1, rewards1, next_states1, terminals1 = \
-                dataset1.random_batch(10)
-
-            np.random.seed(i*11 * i)
-            states2, actions2, rewards2, next_states2, terminals2 = \
-                dataset2.random_batch(10)
-            np.testing.assert_array_almost_equal(states1, states2)
-            np.testing.assert_array_almost_equal(actions1, actions2)
-            np.testing.assert_array_almost_equal(rewards1, rewards2)
-            np.testing.assert_array_almost_equal(next_states1, next_states2)
-            np.testing.assert_array_almost_equal(terminals1, terminals2)
-            # if not np.array_equal(states1, states2):
-            #     print states1,"\n", states2
-            # if not np.array_equal(actions1, actions2):
-            #     print actions1, "\n",actions2
-            # if not np.array_equal(rewards1, rewards2):
-            #     print rewards1, "\n",rewards2
-            # if not np.array_equal(next_states1, next_states2):
-            #     print next_states1, "\n",next_states2
-            # if not np.array_equal(terminals1, terminals2):
-            #     print terminals1, "\n",terminals2
-
-            np.random.seed(hash(time.time()))
-
-
 def test_memory_usage_ok():
     import memory_profiler
-    dataset = DataSet(width=80, height=80, max_steps=100000, phi_length=4)
+    dataset = DataSet(width=80, height=80,
+                      rng=np.random.RandomState(42),
+                      max_steps=100000, phi_length=4)
     last = time.time()
 
     for i in xrange(1000000000):
@@ -287,12 +246,10 @@ def test_memory_usage_ok():
 
 
 def main():
-    #speed_tests()
+    speed_tests()
     test_memory_usage_ok()
-    #test_random_batch()
-    #max_size_tests()
-    #simple_tests()
-    #test_iterator()
+    max_size_tests()
+    simple_tests()
 
 if __name__ == "__main__":
     main()
