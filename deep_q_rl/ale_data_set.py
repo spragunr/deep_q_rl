@@ -5,104 +5,23 @@ It allocates more memory than necessary, then shifts all of the
 data back to 0 when the samples reach the end of the allocated memory.
 """
 
-import pyximport
 import numpy as np
-pyximport.install(setup_args={'include_dirs': np.get_include()})
-import shift
 import time
 import theano
 
 floatX = theano.config.floatX
 
 class DataSet(object):
-    def __init__(self, width, height, rng, max_steps=1000, phi_length=4,
-                 capacity=None):
-        self.rng = rng
-        self.ods = OldDataSet(width, height, rng, max_steps, phi_length, capacity)
-        self.nds = NewDataSet(width, height, rng, max_steps, phi_length)
-        self.otime = 0.
-        self.ntime = 0.
-        self.call_count = 0
-
-    def __len__(self):
-        self.rng_state = self.rng.get_state()
-        self.otime -= time.time()
-        r1 = len(self.ods)
-        self.otime += time.time()
-        self.rng.set_state(self.rng_state)
-        self.ntime -= time.time()
-        r2 = len(self.nds)
-        self.ntime += time.time()
-        self.call_count += 1
-        if not self.check_vals(r1, r2):
-            print 'BAD'
-            print r1
-            print r2
-            import sys
-            sys.exit(1)
-        if self.call_count % 1000 == 0:
-            print 'count: %d, otime: %f, ntime: %f' % (self.call_count, self.otime, self.ntime)
-        return r1
-
-    def __getattr__(self, name):
-        def wrapper(*args, **kwargs):
-            m1 = getattr(self.ods, name)
-            m2 = getattr(self.nds, name)
-            self.rng_state = self.rng.get_state()
-            self.otime -= time.time()
-            r1 = m1(*args)
-            self.otime += time.time()
-            self.rng.set_state(self.rng_state)
-            self.ntime -= time.time()
-            r2 = m2(*args)
-            self.ntime += time.time()
-            self.call_count += 1
-            if not self.check_vals(r1, r2):
-                print 'BAD'
-                print r1
-                print r2
-                import sys
-                sys.exit(1)
-            if self.call_count % 1000 == 0:
-                print 'count: %d, otime: %f, ntime: %f' % (self.call_count, self.otime, self.ntime)
-            return r1
-        return wrapper
-
-    def check_vals(self, v1, v2):
-        if isinstance(v1, tuple):
-            if not (isinstance(v2, tuple) and len(v1) == len(v2)):
-                print 'bad tuple match'
-                print type(v1), type(v2)
-                print len(v1), len(v2)
-                return False
-            for i in range(len(v1)):
-                if not self.check_vals(v1[i], v2[i]):
-                    return False 
-            return True
-        elif isinstance(v1, np.ndarray):
-            if not isinstance(v2, np.ndarray):
-                print 'not ndarray'
-                return False
-            if not np.array_equal(v1, v2):
-                print 'arrays unequal'
-                print v1
-                print v2
-                return False
-            return True
-        else:
-            return v1 == v2
-
-class NewDataSet(object):
     """A replay memory consisting of circular buffers for observed images,
 actions, and rewards.
 
     """
-    def __init__(self, width, height, rng, capacity=1000, phi_length=4):
+    def __init__(self, width, height, rng, max_steps=1000, phi_length=4):
         """Construct a NewDataSet.
 
         Arguments:
             width, height -- image size
-            capacity -- the length of history to store
+            max_steps -- the number of time steps to store
             phi_length -- number of images to concatenate into a state
             rng -- initialized numpy random number generator, used to
             choose random minibatches
@@ -112,10 +31,10 @@ actions, and rewards.
         # number of saved time steps.
 
         # Allocate the circular buffers and indices.
-        imgs = np.zeros((capacity, height, width), dtype='uint8')
-        actions = np.zeros(capacity, dtype='int32')
-        rewards = np.zeros(capacity, dtype=floatX)
-        terminal = np.zeros(capacity, dtype='bool')
+        imgs = np.zeros((max_steps, height, width), dtype='uint8')
+        actions = np.zeros(max_steps, dtype='int32')
+        rewards = np.zeros(max_steps, dtype=floatX)
+        terminal = np.zeros(max_steps, dtype='bool')
 
         bottom = 0
         top = 0
@@ -140,11 +59,11 @@ actions, and rewards.
         self.rewards[self.top] = reward
         self.terminal[self.top] = terminal
 
-        if self.size == self.capacity:
-            self.bottom = (self.bottom + 1) % self.capacity
+        if self.size == self.max_steps:
+            self.bottom = (self.bottom + 1) % self.max_steps
         else:
             self.size += 1
-        self.top = (self.top + 1) % self.capacity
+        self.top = (self.top + 1) % self.max_steps
 
     def __len__(self):
         """Return an approximate count of stored state transitions."""
@@ -206,152 +125,6 @@ next_states for batch_size randomly chosen state transitions.
             count += 1
 
         return states, actions, rewards, next_states, terminal
-
-class OldDataSet(object):
-    """ Class represents a data set that stores a fixed-length history.
-    """
-
-    def __init__(self, width, height, rng, max_steps=1000, phi_length=4,
-                 capacity=None):
-        """  Construct a DataSet.
-
-        Arguments:
-            width,height - image size
-            max_steps - the length of history to store.
-            phi_length - number of images to concatenate into a state.
-            rng        - initialized numpy random number generator.
-            capacity - amount of memory to allocate (just for debugging.)
-        """
-
-        self.rng = rng
-        self.count = 0
-        self.max_steps = max_steps
-        self.phi_length = phi_length
-        if capacity == None:
-            self.capacity = max_steps + int(np.ceil(max_steps * .1))
-        else:
-            self.capacity = capacity
-        self.states = np.zeros((self.capacity, height, width), dtype='uint8')
-        self.actions = np.zeros(self.capacity, dtype='int32')
-        self.rewards = np.zeros(self.capacity, dtype=floatX)
-        self.terminal = np.zeros(self.capacity, dtype='bool')
-
-
-    def _min_index(self):
-        return max(0, self.count - self.max_steps)
-
-    def _max_index(self):
-        return self.count - (self.phi_length + 1)
-
-    def __len__(self):
-        """ Return the total number of avaible data items. """
-        return max(0, (self._max_index() - self._min_index()) + 1)
-
-    def add_sample(self, state, action, reward, terminal):
-        self.states[self.count, ...] = state
-        self.actions[self.count] = action
-        self.rewards[self.count] = reward
-        self.terminal[self.count] = terminal
-        self.count += 1
-
-        # Shift the final max_steps back to the beginning.
-        if self.count == self.capacity:
-            roll_amount = self.capacity - self.max_steps
-            shift.shift3d_uint8(self.states, roll_amount)
-            self.actions = np.roll(self.actions, -roll_amount)
-            self.rewards = np.roll(self.rewards, -roll_amount)
-            self.terminal = np.roll(self.terminal, -roll_amount)
-            self.count = self.max_steps
-
-    def single_episode(self, start, end):
-        """ Make sure that a possible phi does not cross a trial boundary.
-        """
-        return np.alltrue(np.logical_not(self.terminal[start:end]))
-
-    def last_phi(self):
-        """
-        Return the most recent phi.
-        """
-        phi = self._make_phi(self.count - self.phi_length)
-        return  np.array(phi, dtype=floatX)
-
-    def phi(self, state):
-        """
-        Return a phi based on the latest image, by grabbing enough
-        history from the data set to fill it out.
-        """
-        phi = np.empty((self.phi_length,
-                        self.states.shape[1],
-                        self.states.shape[2]),
-                       dtype=floatX)
-
-        phi[0:(self.phi_length-1), ...] = self.last_phi()[1::]
-        phi[self.phi_length-1, ...] = state
-        return phi
-
-    def _make_phi(self, index):
-        end_index = index + self.phi_length - 1
-        #assert self.single_episode(index, end_index)
-        return self.states[index:end_index + 1, ...]
-
-    def _empty_batch(self, batch_size):
-        # Set aside memory for the batch
-        states = np.empty((batch_size, self.phi_length,
-                           self.states.shape[1], self.states.shape[2]),
-                          dtype=floatX)
-        actions = np.empty((batch_size, 1), dtype='int32')
-        rewards = np.empty((batch_size, 1), dtype=floatX)
-        terminals = np.empty((batch_size, 1), dtype=bool)
-
-        next_states = np.empty((batch_size, self.phi_length,
-                                self.states.shape[1],
-                                self.states.shape[2]), dtype=floatX)
-        return states, actions, rewards, terminals, next_states
-
-    def batch_iterator(self, batch_size):
-        """ Generator for iterating over all valid batches. """
-        index = self._min_index()
-        batch_count = 0
-        states, actions, rewards, terminals, next_states = \
-                self._empty_batch(batch_size)      
-        while index <= self._max_index():
-            end_index = index + self.phi_length - 1
-            if self.single_episode(index, end_index):
-                states[batch_count, ...] = self._make_phi(index)
-                actions[batch_count, 0] = self.actions[end_index]
-                rewards[batch_count, 0] = self.rewards[end_index]
-                terminals[batch_count, 0] = self.terminal[end_index]
-                next_states[batch_count, ...] = self._make_phi(index + 1)
-                batch_count += 1
-            index += 1
-
-            if batch_count == batch_size:
-                yield states, actions, rewards, terminals, next_states
-                batch_count = 0
-                states, actions, rewards, terminals, next_states = \
-                    self._empty_batch(batch_size)      
-
-                
-    def random_batch(self, batch_size):
-
-        count = 0
-        states, actions, rewards, terminals, next_states = \
-            self._empty_batch(batch_size)
-
-        # Grab random samples until we have enough
-        while count < batch_size:
-            index = self.rng.randint(self._min_index(), self._max_index()+1)
-            end_index = index + self.phi_length - 1
-            if self.single_episode(index, end_index):
-                states[count, ...] = self._make_phi(index)
-                actions[count, 0] = self.actions[end_index]
-                rewards[count, 0] = self.rewards[end_index]
-                terminals[count, 0] = self.terminal[end_index]
-                next_states[count, ...] = self._make_phi(index + 1)
-                count += 1
-
-        return states, actions, rewards, next_states, terminals
-
 
 
 # TESTING CODE BELOW THIS POINT...
