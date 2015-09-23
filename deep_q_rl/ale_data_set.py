@@ -1,8 +1,5 @@
 """This class stores all of the samples for training.  It is able to
 construct randomly selected batches of phi's from the stored history.
-
-It allocates more memory than necessary, then shifts all of the
-data back to 0 when the samples reach the end of the allocated memory.
 """
 
 import numpy as np
