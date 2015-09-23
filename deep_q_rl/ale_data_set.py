@@ -122,7 +122,7 @@ next_states for batch_size randomly chosen state transitions.
             if np.any(self.terminal.take(initial_indices[0:-1], mode='wrap')):
                 continue
 
-            # Add the state transition to the response.dy
+            # Add the state transition to the response.
             states[count] = self.imgs.take(initial_indices, axis=0, mode='wrap')
             actions[count] = self.actions.take(end_index, mode='wrap')
             rewards[count] = self.rewards.take(end_index, mode='wrap')
