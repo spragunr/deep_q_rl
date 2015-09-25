@@ -8,7 +8,7 @@ Author: Nathan Sprague
 
 import os
 import cPickle
-import time
+import datetime
 import logging
 import json
 
@@ -103,11 +103,9 @@ class NeuralAgent(AgentBase):
     # region Dumping/Logging
     def _create_export_dir(self):
         # CREATE A FOLDER TO HOLD RESULTS
-        time_str = time.strftime("_%m-%d-%H-%M_", time.gmtime())
-        export_dir = self.exp_pref + time_str + \
-                     "{}".format(self.params.learning_rate).replace(".", "p") \
-                     + "_" + \
-                     "{}".format(self.params.discount).replace(".", "p")
+        # this is now just exp_pref + timestamp. params are in params.json
+        time_str = datetime.datetime.now().strftime("_%m-%d-%H%M_%S_%f")
+        export_dir = self.exp_pref + time_str
         try:
             os.stat(export_dir)
         except OSError:
@@ -316,7 +314,8 @@ class NeuralAgent(AgentBase):
 
     def finish_epoch(self, epoch):
         network_filename = 'network_file_' + str(epoch) + '.pkl'
-        self._persist_network(network_filename)
+        #we no longer want to write the entire network, it's too enormous
+        #self._persist_network(network_filename)
 
     def start_testing(self, epoch):
         self.testing = True
