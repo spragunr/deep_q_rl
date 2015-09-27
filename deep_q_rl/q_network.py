@@ -100,12 +100,25 @@ class DeepQLearner:
                                actions.reshape((-1,))].reshape((-1, 1))
 
         if self.clip_delta > 0:
-            diff = diff.clip(-self.clip_delta, self.clip_delta)
+            # If we simply take the squared clipped diff as our loss,
+            # then the gradient will be zero whenever the diff exceeds
+            # the clip bounds. To avoid this, we extend the loss
+            # linearly past the clip point to keep the gradient constant
+            # in that regime.
+            # 
+            # This is equivalent to declaring d loss/d q_vals to be
+            # equal to the clipped diff, then backpropagating from
+            # there, which is what the DeepMind implementation does.
+            quadratic_part = T.minimum(abs(diff), self.clip_delta)
+            linear_part = abs(diff) - quadratic_part
+            loss = 0.5 * quadratic_part ** 2 + self.clip_delta * linear_part
+        else:
+            loss = 0.5 * diff ** 2
 
         if batch_accumulator == 'sum':
-            loss = T.sum(diff ** 2)
+            loss = T.sum(loss)
         elif batch_accumulator == 'mean':
-            loss = T.mean(diff ** 2)
+            loss = T.mean(loss)
         else:
             raise ValueError("Bad accumulator: {}".format(batch_accumulator))
 
