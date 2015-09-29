@@ -5,9 +5,6 @@ echo "==>dependencies setup for deep_q_rl"
 echo "==>updating current package..."
 sudo apt-get update
 
-echo "==>installing Cython..."
-sudo apt-get install cython
-
 echo "==>installing OpenCV..."
 sudo apt-get install python-opencv
 
