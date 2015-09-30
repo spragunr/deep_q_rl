@@ -102,8 +102,8 @@ class DeepQLearner:
 
         target = (rewards +
                   (T.ones_like(terminalsX) - terminalsX) *
-                  self.discount * T.max(next_q_vals, axis=1))
-        output = (q_vals * action_mask).sum(axis=1)
+                  self.discount * T.max(next_q_vals, axis=1, keepdims=True))
+        output = (q_vals * action_mask).sum(axis=1).reshape((-1, 1))
         diff = target - output
 
         if self.clip_delta > 0:
