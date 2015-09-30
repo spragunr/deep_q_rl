@@ -93,13 +93,13 @@ class DeepQLearner:
             next_q_vals = theano.gradient.disconnected_grad(next_q_vals)
 
         terminalsX = terminals.astype(theano.config.floatX)
-        action_mask = T.eq(T.arange(num_actions).reshape((1, -1)),
-                           actions.reshape((-1, 1))).astype(theano.config.floatX)
+        actionmask = T.eq(T.arange(num_actions).reshape((1, -1)),
+                          actions.reshape((-1, 1))).astype(theano.config.floatX)
 
         target = (rewards +
                   (T.ones_like(terminalsX) - terminalsX) *
                   self.discount * T.max(next_q_vals, axis=1, keepdims=True))
-        output = (q_vals * action_mask).sum(axis=1).reshape((-1, 1))
+        output = (q_vals * actionmask).sum(axis=1).reshape((-1, 1))
         diff = target - output
 
         if self.clip_delta > 0:
@@ -204,7 +204,9 @@ class DeepQLearner:
         return np.sqrt(loss)
 
     def q_vals(self, state):
-        self.states1_shared.set_value(state.reshape(1, self.num_frames, self.input_height,
+        self.states1_shared.set_value(state.reshape(1,
+                                                    self.num_frames,
+                                                    self.input_height,
                                                     self.input_width))
         return self._q_vals()
 
