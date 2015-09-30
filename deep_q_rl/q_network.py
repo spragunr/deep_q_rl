@@ -64,14 +64,10 @@ class DeepQLearner:
         terminals = T.icol('terminals')
 
         self.states_shared = theano.shared(
-            np.zeros((batch_size, num_frames, input_height, input_width),
+            np.zeros((batch_size, num_frames + 1, input_height, input_width),
                      dtype=theano.config.floatX))
         self.states1_shared = theano.shared(
             np.zeros((1, num_frames, input_height, input_width),
-                     dtype=theano.config.floatX))
-
-        self.next_states_shared = theano.shared(
-            np.zeros((batch_size, num_frames, input_height, input_width),
                      dtype=theano.config.floatX))
 
         self.rewards_shared = theano.shared(
@@ -131,8 +127,8 @@ class DeepQLearner:
 
         params = lasagne.layers.helper.get_all_params(self.l_out)  
         givens = {
-            states: self.states_shared,
-            next_states: self.next_states_shared,
+            states: self.states_shared[:, :-1],
+            next_states: self.states_shared[:, 1:],
             rewards: self.rewards_shared,
             actions: self.actions_shared,
             terminals: self.terminals_shared
@@ -181,24 +177,22 @@ class DeepQLearner:
 
 
 
-    def train(self, states, actions, rewards, next_states, terminals):
+    def train(self, states, actions, rewards, terminals):
         """
         Train one batch.
 
         Arguments:
 
-        states - b x f x h x w numpy array, where b is batch size,
+        states - b x (f + 1) x h x w numpy array, where b is batch size,
                  f is num frames, h is height and w is width.
         actions - b x 1 numpy array of integers
         rewards - b x 1 numpy array
-        next_states - b x f x h x w numpy array
         terminals - b x 1 numpy boolean array (currently ignored)
 
         Returns: average loss
         """
 
         self.states_shared.set_value(states)
-        self.next_states_shared.set_value(next_states)
         self.actions_shared.set_value(actions)
         self.rewards_shared.set_value(rewards)
         self.terminals_shared.set_value(terminals)

@@ -223,11 +223,10 @@ class NeuralAgent(object):
         May be overridden if a subclass needs to train the network
         differently.
         """
-        states, actions, rewards, next_states, terminals = \
+        states, actions, rewards, terminals = \
                                 self.data_set.random_batch(
                                     self.network.batch_size)
-        return self.network.train(states, actions, rewards,
-                                  next_states, terminals)
+        return self.network.train(states, actions, rewards, terminals)
 
 
     def end_episode(self, reward, terminal=True):
@@ -291,7 +290,7 @@ class NeuralAgent(object):
         if self.holdout_data is not None:
             for i in range(holdout_size):
                 holdout_sum += np.max(
-                    self.network.q_vals(self.holdout_data[i, ...]))
+                    self.network.q_vals(self.holdout_data[i, :self.phi_length]))
 
         self._update_results_file(epoch, self.episode_counter,
                                   holdout_sum / holdout_size)
