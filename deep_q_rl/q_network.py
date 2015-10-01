@@ -63,24 +63,27 @@ class DeepQLearner:
         actions = T.icol('actions')
         terminals = T.icol('terminals')
 
-        self.states_shared = theano.shared(
+        # Shared variables for training from a minibatch of replayed
+        # state transitions, each consisting of num_frames + 1 (due to
+        # overlap) images, along with the chosen action and resulting
+        # reward and terminal status.
+        self.imgs_shared = theano.shared(
             np.zeros((batch_size, num_frames + 1, input_height, input_width),
                      dtype=theano.config.floatX))
-        self.states1_shared = theano.shared(
-            np.zeros((1, num_frames, input_height, input_width),
-                     dtype=theano.config.floatX))
-
         self.rewards_shared = theano.shared(
             np.zeros((batch_size, 1), dtype=theano.config.floatX),
             broadcastable=(False, True))
-
         self.actions_shared = theano.shared(
             np.zeros((batch_size, 1), dtype='int32'),
             broadcastable=(False, True))
-
         self.terminals_shared = theano.shared(
             np.zeros((batch_size, 1), dtype='int32'),
             broadcastable=(False, True))
+
+        # Shared variable for a single state, to calculate q_vals.
+        self.state_shared = theano.shared(
+            np.zeros((num_frames, input_height, input_width),
+                     dtype=theano.config.floatX))
 
         q_vals = lasagne.layers.get_output(self.l_out, states / input_scale)
         
@@ -126,9 +129,9 @@ class DeepQLearner:
             raise ValueError("Bad accumulator: {}".format(batch_accumulator))
 
         params = lasagne.layers.helper.get_all_params(self.l_out)  
-        givens = {
-            states: self.states_shared[:, :-1],
-            next_states: self.states_shared[:, 1:],
+        train_givens = {
+            states: self.imgs_shared[:, :-1],
+            next_states: self.imgs_shared[:, 1:],
             rewards: self.rewards_shared,
             actions: self.actions_shared,
             terminals: self.terminals_shared
@@ -149,9 +152,14 @@ class DeepQLearner:
                                                      self.momentum)
 
         self._train = theano.function([], [loss], updates=updates,
-                                      givens=givens)
-        self._q_vals = theano.function([], q_vals[0],
-                                       givens={states: self.states1_shared})
+                                      givens=train_givens)
+        q_givens = {
+            states: self.state_shared.reshape((1,
+                                               self.num_frames,
+                                               self.input_height,
+                                               self.input_width))
+        }
+        self._q_vals = theano.function([], q_vals[0], givens=q_givens)
 
     def build_network(self, network_type, input_width, input_height,
                       output_dim, num_frames, batch_size):
@@ -177,14 +185,14 @@ class DeepQLearner:
 
 
 
-    def train(self, states, actions, rewards, terminals):
+    def train(self, imgs, actions, rewards, terminals):
         """
         Train one batch.
 
         Arguments:
 
-        states - b x (f + 1) x h x w numpy array, where b is batch size,
-                 f is num frames, h is height and w is width.
+        imgs - b x (f + 1) x h x w numpy array, where b is batch size,
+               f is num frames, h is height and w is width.
         actions - b x 1 numpy array of integers
         rewards - b x 1 numpy array
         terminals - b x 1 numpy boolean array (currently ignored)
@@ -192,7 +200,7 @@ class DeepQLearner:
         Returns: average loss
         """
 
-        self.states_shared.set_value(states)
+        self.imgs_shared.set_value(imgs)
         self.actions_shared.set_value(actions)
         self.rewards_shared.set_value(rewards)
         self.terminals_shared.set_value(terminals)
@@ -204,10 +212,7 @@ class DeepQLearner:
         return np.sqrt(loss)
 
     def q_vals(self, state):
-        self.states1_shared.set_value(state.reshape(1,
-                                                    self.num_frames,
-                                                    self.input_height,
-                                                    self.input_width))
+        self.state_shared.set_value(state)
         return self._q_vals()
 
     def choose_action(self, state, epsilon):

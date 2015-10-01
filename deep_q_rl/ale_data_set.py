@@ -91,16 +91,16 @@ actions, and rewards.
         return phi
 
     def random_batch(self, batch_size):
-        """Return corresponding states, actions, rewards, and terminal status
-for batch_size randomly chosen state transitions.
+        """Return corresponding imgs, actions, rewards, and terminal status for
+batch_size randomly chosen state transitions.
 
         """
         # Allocate the response.
-        states = np.zeros((batch_size,
-                           self.phi_length + 1,
-                           self.height,
-                           self.width),
-                          dtype='uint8')
+        imgs = np.zeros((batch_size,
+                         self.phi_length + 1,
+                         self.height,
+                         self.width),
+                        dtype='uint8')
         actions = np.zeros((batch_size, 1), dtype='int32')
         rewards = np.zeros((batch_size, 1), dtype=floatX)
         terminal = np.zeros((batch_size, 1), dtype='bool')
@@ -111,6 +111,8 @@ for batch_size randomly chosen state transitions.
             index = self.rng.randint(self.bottom,
                                      self.bottom + self.size - self.phi_length)
 
+            # Both the before and after states contain phi_length
+            # frames, overlapping except for the first and last.
             all_indices = np.arange(index, index + self.phi_length + 1)
             end_index = index + self.phi_length - 1
             
@@ -126,13 +128,13 @@ for batch_size randomly chosen state transitions.
                 continue
 
             # Add the state transition to the response.
-            states[count] = self.imgs.take(all_indices, axis=0, mode='wrap')
+            imgs[count] = self.imgs.take(all_indices, axis=0, mode='wrap')
             actions[count] = self.actions.take(end_index, mode='wrap')
             rewards[count] = self.rewards.take(end_index, mode='wrap')
             terminal[count] = self.terminal.take(end_index, mode='wrap')
             count += 1
 
-        return states, actions, rewards, terminal
+        return imgs, actions, rewards, terminal
 
 
 # TESTING CODE BELOW THIS POINT...
@@ -237,7 +239,7 @@ def test_memory_usage_ok():
             print i
         dataset.add_sample(np.random.random((80, 80)), 1, 1, False)
         if i > 200000:
-            states, actions, rewards, terminals = \
+            imgs, actions, rewards, terminals = \
                                         dataset.random_batch(32)
         if (i % 10007) == 0:
             print time.time() - last
