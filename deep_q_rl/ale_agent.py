@@ -87,6 +87,9 @@ class NeuralAgent(object):
         self.last_img = None
         self.last_action = None
 
+        # Exponential moving average of runtime performance.
+        self.steps_sec_ema = 0.
+
     def _open_results_file(self):
         logging.info("OPENING " + self.exp_dir + '/results.csv')
         self.results_file = open(self.exp_dir + '/results.csv', 'w', 0)
@@ -259,8 +262,12 @@ class NeuralAgent(object):
                                      np.clip(reward, -1, 1),
                                      True)
 
-            logging.info("steps/second: {:.2f}".format(\
-                            self.step_counter/total_time))
+            rho = 0.98
+            self.steps_sec_ema *= rho
+            self.steps_sec_ema += (1. - rho) * (self.step_counter/total_time)
+
+            logging.info("steps/second: {:.2f}, avg: {:.2f}".format(
+                self.step_counter/total_time, self.steps_sec_ema))
 
             if self.batch_counter > 0:
                 self._update_learning_file()
