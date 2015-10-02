@@ -118,8 +118,8 @@ batch_size randomly chosen state transitions.
             
             # Check that the initial state corresponds entirely to a
             # single episode, meaning none but its last frame (the
-            # second-to-last frame in states) may be terminal. If the
-            # last frame of the initial state is terminal, then the last
+            # second-to-last frame in imgs) may be terminal. If the last
+            # frame of the initial state is terminal, then the last
             # frame of the transitioned state will actually be the first
             # frame of a new episode, which the Q learner recognizes and
             # handles correctly during training by zeroing the
