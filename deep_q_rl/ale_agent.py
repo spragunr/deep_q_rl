@@ -8,8 +8,9 @@ Author: Nathan Sprague
 
 import os
 import cPickle
-import time
+import datetime
 import logging
+import json
 
 import numpy as np
 
@@ -77,6 +78,7 @@ class NeuralAgent(AgentBase):
         self.last_action = None
 
         self.export_dir = self._create_export_dir()
+        self._open_params_file()
         self._open_results_file()
         self._open_learning_file()
 
@@ -101,17 +103,23 @@ class NeuralAgent(AgentBase):
     # region Dumping/Logging
     def _create_export_dir(self):
         # CREATE A FOLDER TO HOLD RESULTS
-        time_str = time.strftime("_%m-%d-%H-%M_", time.gmtime())
-        export_dir = self.exp_pref + time_str + \
-                     "{}".format(self.params.learning_rate).replace(".", "p") \
-                     + "_" + \
-                     "{}".format(self.params.discount).replace(".", "p")
+        # this is now just exp_pref + timestamp. params are in params.json
+        time_str = datetime.datetime.now().strftime("_%m-%d-%H%M_%S_%f")
+        export_dir = self.exp_pref + time_str
         try:
             os.stat(export_dir)
         except OSError:
             os.makedirs(export_dir)
 
         return export_dir
+
+    def _open_params_file(self):
+        self.params_file = open(self.export_dir + '/params.json', 'w')
+        param_dict = {k:v for k, v in self.params.__dict__.items() \
+                      if "__" not in k \
+                      and isinstance(v, (int, float, str, bool))}
+        json.dump(param_dict, self.params_file, indent=4)
+        self.params_file.close()
 
     def _open_results_file(self):
         logging.info("OPENING " + self.export_dir + '/results.csv')
