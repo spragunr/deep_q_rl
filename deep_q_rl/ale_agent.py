@@ -314,8 +314,7 @@ class NeuralAgent(AgentBase):
 
     def finish_epoch(self, epoch):
         network_filename = 'network_file_' + str(epoch) + '.pkl'
-        #we no longer want to write the entire network, it's too enormous
-        #self._persist_network(network_filename)
+        self._persist_network(network_filename)
 
     def start_testing(self, epoch):
         self.testing = True
