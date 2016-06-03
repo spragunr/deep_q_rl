@@ -87,13 +87,21 @@ class LinearTests(unittest.TestCase):
         self.discount = .5
         self.mdp = ChainMDP()
 
+    def make_net(self, freeze_interval):
+        return q_network.DeepQLearner(self.mdp.num_states, 1,
+                                      self.mdp.num_actions, 1,
+                                      self.discount,
+                                      self.learning_rate, 0, 0, 0, 0,
+                                      freeze_interval, 1, 'linear',
+                                      'sgd', 'sum', 
+                                      np.random.RandomState(), 1.0)
 
     def all_q_vals(self, net):
         """ Helper method to get the entire Q-table """
 
         q_vals = np.zeros((self.mdp.num_states, self.mdp.num_actions))
         for i in range(self.mdp.num_states):
-            q_vals[i, :] = net.q_vals(self.mdp.states[i])
+            q_vals[i, :] = net.q_vals(self.mdp.states[i][0])
         return q_vals
 
     def train(self, net, steps):
@@ -103,17 +111,12 @@ class LinearTests(unittest.TestCase):
             action_index = np.random.randint(0, mdp.num_actions)
             reward, next_state, terminal = mdp.act(state, action_index)
 
-            net.train(state, mdp.actions[action_index], reward, next_state,
-                      terminal)
+            frames = np.concatenate((state, next_state), axis=1)
+            net.train(frames, mdp.actions[action_index], reward, terminal)
 
     def test_updates_sgd_no_freeze(self):
         freeze_interval = -1
-        net = q_network.DeepQLearner(self.mdp.num_states, 1,
-                                     self.mdp.num_actions, 1,
-                                     self.discount,
-                                     self.learning_rate, 0, 0, 0, 0,
-                                     freeze_interval, 1, 'linear',
-                                     'sgd', 'sum', np.random.RandomState(), 1.0)
+        net = self.make_net(freeze_interval)
 
         mdp = self.mdp
 
@@ -121,8 +124,9 @@ class LinearTests(unittest.TestCase):
         state = mdp.states[0]
         action_index = 0
         reward, next_state, terminal = mdp.act(state, action_index)
-        net.train(state, mdp.actions[action_index], reward, next_state,
-                  terminal)
+
+        frames = np.concatenate((state, next_state), axis=1)
+        net.train(frames, mdp.actions[action_index], reward, terminal)
 
         numpy.testing.assert_almost_equal(self.all_q_vals(net),
                                           [[.07, 0], [0, 0], [0, 0], [0, 0]])
@@ -131,8 +135,9 @@ class LinearTests(unittest.TestCase):
         state = mdp.states[-2]
         action_index = 1
         reward, next_state, terminal = mdp.act(state, action_index)
-        net.train(state, mdp.actions[action_index], reward, next_state,
-                  terminal)
+
+        frames = np.concatenate((state, next_state), axis=1)
+        net.train(frames, mdp.actions[action_index], reward, terminal)
 
         numpy.testing.assert_almost_equal(self.all_q_vals(net),
                                           [[.07, 0], [0, 0], [0, .1], [0, 0]])
@@ -141,8 +146,9 @@ class LinearTests(unittest.TestCase):
         state = mdp.states[1]
         action_index = 0
         reward, next_state, terminal = mdp.act(state, action_index)
-        net.train(state, mdp.actions[action_index], reward, next_state,
-                  terminal)
+
+        frames = np.concatenate((state, next_state), axis=1)
+        net.train(frames, mdp.actions[action_index], reward, terminal)
 
         numpy.testing.assert_almost_equal(self.all_q_vals(net),
                                           [[.07, 0], [0.0035, 0], [0, .1],
@@ -151,13 +157,7 @@ class LinearTests(unittest.TestCase):
 
     def test_convergence_sgd_no_freeze(self):
         freeze_interval = -1
-        net = q_network.DeepQLearner(self.mdp.num_states, 1,
-                                     self.mdp.num_actions, 1,
-                                     self.discount,
-                                     self.learning_rate, 0, 0, 0, 0,
-                                     freeze_interval, 1, 'linear',
-                                     'sgd', 'sum', np.random.RandomState(), 1.0)
-
+        net = self.make_net(freeze_interval)
 
         self.train(net, 1000)
 
@@ -172,12 +172,7 @@ class LinearTests(unittest.TestCase):
         terminal state will propagate back.
         """
         freeze_interval = -1
-        net = q_network.DeepQLearner(self.mdp.num_states, 1,
-                                     self.mdp.num_actions, 1,
-                                     self.discount,
-                                     self.learning_rate, 0, 0, 0, 0,
-                                     freeze_interval, 1, 'linear',
-                                     'sgd', 'sum', np.random.RandomState(), 1.0)
+        net = self.make_net(freeze_interval)
 
         # Randomize initial q-values:
         params = lasagne.layers.helper.get_all_param_values(net.l_out)
@@ -197,12 +192,7 @@ class LinearTests(unittest.TestCase):
 
     def test_convergence_sgd_permanent_freeze(self):
         freeze_interval = 1000000
-        net = q_network.DeepQLearner(self.mdp.num_states, 1,
-                                     self.mdp.num_actions, 1,
-                                     self.discount,
-                                     self.learning_rate, 0, 0, 0, 0,
-                                     freeze_interval, 1, 'linear',
-                                     'sgd', 'sum', np.random.RandomState(), 1.0)
+        net = self.make_net(freeze_interval)
 
         self.train(net, 1000)
 
@@ -212,12 +202,7 @@ class LinearTests(unittest.TestCase):
 
     def test_convergence_sgd_frequent_freeze(self):
         freeze_interval = 2
-        net = q_network.DeepQLearner(self.mdp.num_states, 1,
-                                     self.mdp.num_actions, 1,
-                                     self.discount,
-                                     self.learning_rate, 0, 0, 0, 0,
-                                     freeze_interval, 1, 'linear',
-                                     'sgd', 'sum', np.random.RandomState(), 1.0)
+        net = self.make_net(freeze_interval)
 
         self.train(net, 1000)
 
@@ -227,12 +212,7 @@ class LinearTests(unittest.TestCase):
 
     def test_convergence_sgd_one_freeze(self):
         freeze_interval = 500
-        net = q_network.DeepQLearner(self.mdp.num_states, 1,
-                                     self.mdp.num_actions, 1,
-                                     self.discount,
-                                     self.learning_rate, 0, 0, 0, 0,
-                                     freeze_interval, 1, 'linear',
-                                     'sgd', 'sum', np.random.RandomState(), 1.0)
+        net = self.make_net(freeze_interval)
 
         self.train(net, freeze_interval * 2)
 

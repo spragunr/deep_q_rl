@@ -91,24 +91,19 @@ actions, and rewards.
         return phi
 
     def random_batch(self, batch_size):
-        """Return corresponding states, actions, rewards, terminal status, and
-next_states for batch_size randomly chosen state transitions.
+        """Return corresponding imgs, actions, rewards, and terminal status for
+batch_size randomly chosen state transitions.
 
         """
         # Allocate the response.
-        states = np.zeros((batch_size,
-                           self.phi_length,
-                           self.height,
-                           self.width),
-                          dtype='uint8')
+        imgs = np.zeros((batch_size,
+                         self.phi_length + 1,
+                         self.height,
+                         self.width),
+                        dtype='uint8')
         actions = np.zeros((batch_size, 1), dtype='int32')
         rewards = np.zeros((batch_size, 1), dtype=floatX)
         terminal = np.zeros((batch_size, 1), dtype='bool')
-        next_states = np.zeros((batch_size,
-                                self.phi_length,
-                                self.height,
-                                self.width),
-                               dtype='uint8')
 
         count = 0
         while count < batch_size:
@@ -116,31 +111,30 @@ next_states for batch_size randomly chosen state transitions.
             index = self.rng.randint(self.bottom,
                                      self.bottom + self.size - self.phi_length)
 
-            initial_indices = np.arange(index, index + self.phi_length)
-            transition_indices = initial_indices + 1
+            # Both the before and after states contain phi_length
+            # frames, overlapping except for the first and last.
+            all_indices = np.arange(index, index + self.phi_length + 1)
             end_index = index + self.phi_length - 1
             
             # Check that the initial state corresponds entirely to a
-            # single episode, meaning none but the last frame may be
-            # terminal. If the last frame of the initial state is
-            # terminal, then the last frame of the transitioned state
-            # will actually be the first frame of a new episode, which
-            # the Q learner recognizes and handles correctly during
-            # training by zeroing the discounted future reward estimate.
-            if np.any(self.terminal.take(initial_indices[0:-1], mode='wrap')):
+            # single episode, meaning none but its last frame (the
+            # second-to-last frame in imgs) may be terminal. If the last
+            # frame of the initial state is terminal, then the last
+            # frame of the transitioned state will actually be the first
+            # frame of a new episode, which the Q learner recognizes and
+            # handles correctly during training by zeroing the
+            # discounted future reward estimate.
+            if np.any(self.terminal.take(all_indices[0:-2], mode='wrap')):
                 continue
 
             # Add the state transition to the response.
-            states[count] = self.imgs.take(initial_indices, axis=0, mode='wrap')
+            imgs[count] = self.imgs.take(all_indices, axis=0, mode='wrap')
             actions[count] = self.actions.take(end_index, mode='wrap')
             rewards[count] = self.rewards.take(end_index, mode='wrap')
             terminal[count] = self.terminal.take(end_index, mode='wrap')
-            next_states[count] = self.imgs.take(transition_indices,
-                                                axis=0,
-                                                mode='wrap')
             count += 1
 
-        return states, actions, rewards, next_states, terminal
+        return imgs, actions, rewards, terminal
 
 
 # TESTING CODE BELOW THIS POINT...
@@ -245,7 +239,7 @@ def test_memory_usage_ok():
             print i
         dataset.add_sample(np.random.random((80, 80)), 1, 1, False)
         if i > 200000:
-            states, actions, rewards, next_states, terminals = \
+            imgs, actions, rewards, terminals = \
                                         dataset.random_batch(32)
         if (i % 10007) == 0:
             print time.time() - last
