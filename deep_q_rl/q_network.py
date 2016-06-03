@@ -63,25 +63,27 @@ class DeepQLearner:
         actions = T.icol('actions')
         terminals = T.icol('terminals')
 
-        self.states_shared = theano.shared(
-            np.zeros((batch_size, num_frames, input_height, input_width),
+        # Shared variables for training from a minibatch of replayed
+        # state transitions, each consisting of num_frames + 1 (due to
+        # overlap) images, along with the chosen action and resulting
+        # reward and terminal status.
+        self.imgs_shared = theano.shared(
+            np.zeros((batch_size, num_frames + 1, input_height, input_width),
                      dtype=theano.config.floatX))
-
-        self.next_states_shared = theano.shared(
-            np.zeros((batch_size, num_frames, input_height, input_width),
-                     dtype=theano.config.floatX))
-
         self.rewards_shared = theano.shared(
             np.zeros((batch_size, 1), dtype=theano.config.floatX),
             broadcastable=(False, True))
-
         self.actions_shared = theano.shared(
             np.zeros((batch_size, 1), dtype='int32'),
             broadcastable=(False, True))
-
         self.terminals_shared = theano.shared(
             np.zeros((batch_size, 1), dtype='int32'),
             broadcastable=(False, True))
+
+        # Shared variable for a single state, to calculate q_vals.
+        self.state_shared = theano.shared(
+            np.zeros((num_frames, input_height, input_width),
+                     dtype=theano.config.floatX))
 
         q_vals = lasagne.layers.get_output(self.l_out, states / input_scale)
         
@@ -93,11 +95,15 @@ class DeepQLearner:
                                                     next_states / input_scale)
             next_q_vals = theano.gradient.disconnected_grad(next_q_vals)
 
+        terminalsX = terminals.astype(theano.config.floatX)
+        actionmask = T.eq(T.arange(num_actions).reshape((1, -1)),
+                          actions.reshape((-1, 1))).astype(theano.config.floatX)
+
         target = (rewards +
-                  (T.ones_like(terminals) - terminals) *
+                  (T.ones_like(terminalsX) - terminalsX) *
                   self.discount * T.max(next_q_vals, axis=1, keepdims=True))
-        diff = target - q_vals[T.arange(batch_size),
-                               actions.reshape((-1,))].reshape((-1, 1))
+        output = (q_vals * actionmask).sum(axis=1).reshape((-1, 1))
+        diff = target - output
 
         if self.clip_delta > 0:
             # If we simply take the squared clipped diff as our loss,
@@ -123,9 +129,9 @@ class DeepQLearner:
             raise ValueError("Bad accumulator: {}".format(batch_accumulator))
 
         params = lasagne.layers.helper.get_all_params(self.l_out)  
-        givens = {
-            states: self.states_shared,
-            next_states: self.next_states_shared,
+        train_givens = {
+            states: self.imgs_shared[:, :-1],
+            next_states: self.imgs_shared[:, 1:],
             rewards: self.rewards_shared,
             actions: self.actions_shared,
             terminals: self.terminals_shared
@@ -145,10 +151,15 @@ class DeepQLearner:
             updates = lasagne.updates.apply_momentum(updates, None,
                                                      self.momentum)
 
-        self._train = theano.function([], [loss, q_vals], updates=updates,
-                                      givens=givens)
-        self._q_vals = theano.function([], q_vals,
-                                       givens={states: self.states_shared})
+        self._train = theano.function([], [loss], updates=updates,
+                                      givens=train_givens)
+        q_givens = {
+            states: self.state_shared.reshape((1,
+                                               self.num_frames,
+                                               self.input_height,
+                                               self.input_width))
+        }
+        self._q_vals = theano.function([], q_vals[0], givens=q_givens)
 
     def build_network(self, network_type, input_width, input_height,
                       output_dim, num_frames, batch_size):
@@ -174,40 +185,35 @@ class DeepQLearner:
 
 
 
-    def train(self, states, actions, rewards, next_states, terminals):
+    def train(self, imgs, actions, rewards, terminals):
         """
         Train one batch.
 
         Arguments:
 
-        states - b x f x h x w numpy array, where b is batch size,
-                 f is num frames, h is height and w is width.
+        imgs - b x (f + 1) x h x w numpy array, where b is batch size,
+               f is num frames, h is height and w is width.
         actions - b x 1 numpy array of integers
         rewards - b x 1 numpy array
-        next_states - b x f x h x w numpy array
         terminals - b x 1 numpy boolean array (currently ignored)
 
         Returns: average loss
         """
 
-        self.states_shared.set_value(states)
-        self.next_states_shared.set_value(next_states)
+        self.imgs_shared.set_value(imgs)
         self.actions_shared.set_value(actions)
         self.rewards_shared.set_value(rewards)
         self.terminals_shared.set_value(terminals)
         if (self.freeze_interval > 0 and
             self.update_counter % self.freeze_interval == 0):
             self.reset_q_hat()
-        loss, _ = self._train()
+        loss = self._train()
         self.update_counter += 1
         return np.sqrt(loss)
 
     def q_vals(self, state):
-        states = np.zeros((self.batch_size, self.num_frames, self.input_height,
-                           self.input_width), dtype=theano.config.floatX)
-        states[0, ...] = state
-        self.states_shared.set_value(states)
-        return self._q_vals()[0]
+        self.state_shared.set_value(state)
+        return self._q_vals()
 
     def choose_action(self, state, epsilon):
         if self.rng.rand() < epsilon:
@@ -227,7 +233,7 @@ class DeepQLearner:
         from lasagne.layers import cuda_convnet
 
         l_in = lasagne.layers.InputLayer(
-            shape=(batch_size, num_frames, input_width, input_height)
+            shape=(None, num_frames, input_width, input_height)
         )
 
         l_conv1 = cuda_convnet.Conv2DCCLayer(
@@ -290,7 +296,7 @@ class DeepQLearner:
         from lasagne.layers import dnn
 
         l_in = lasagne.layers.InputLayer(
-            shape=(batch_size, num_frames, input_width, input_height)
+            shape=(None, num_frames, input_width, input_height)
         )
 
         l_conv1 = dnn.Conv2DDNNLayer(
@@ -350,7 +356,7 @@ class DeepQLearner:
         """
         from lasagne.layers import cuda_convnet
         l_in = lasagne.layers.InputLayer(
-            shape=(batch_size, num_frames, input_width, input_height)
+            shape=(None, num_frames, input_width, input_height)
         )
 
         l_conv1 = cuda_convnet.Conv2DCCLayer(
@@ -407,7 +413,7 @@ class DeepQLearner:
         from lasagne.layers import dnn
 
         l_in = lasagne.layers.InputLayer(
-            shape=(batch_size, num_frames, input_width, input_height)
+            shape=(None, num_frames, input_width, input_height)
         )
 
 
@@ -462,7 +468,7 @@ class DeepQLearner:
         """
 
         l_in = lasagne.layers.InputLayer(
-            shape=(batch_size, num_frames, input_width, input_height)
+            shape=(None, num_frames, input_width, input_height)
         )
 
         l_out = lasagne.layers.DenseLayer(
