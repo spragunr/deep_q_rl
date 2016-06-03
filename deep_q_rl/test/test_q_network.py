@@ -82,9 +82,7 @@ class LinearTests(unittest.TestCase):
     """
     def setUp(self):
 
-        # Divide the desired learning rate by two, because loss is
-        # defined as L^2, not 1/2 L^2.
-        self.learning_rate = .1 / 2.0
+        self.learning_rate = .1
 
         self.discount = .5
         self.mdp = ChainMDP()
@@ -115,7 +113,7 @@ class LinearTests(unittest.TestCase):
                                      self.discount,
                                      self.learning_rate, 0, 0, 0, 0,
                                      freeze_interval, 1, 'linear',
-                                     'sgd', 'sum', 1.0)
+                                     'sgd', 'sum', np.random.RandomState(), 1.0)
 
         mdp = self.mdp
 
@@ -158,7 +156,7 @@ class LinearTests(unittest.TestCase):
                                      self.discount,
                                      self.learning_rate, 0, 0, 0, 0,
                                      freeze_interval, 1, 'linear',
-                                     'sgd', 'sum', 1.0)
+                                     'sgd', 'sum', np.random.RandomState(), 1.0)
 
 
         self.train(net, 1000)
@@ -179,7 +177,7 @@ class LinearTests(unittest.TestCase):
                                      self.discount,
                                      self.learning_rate, 0, 0, 0, 0,
                                      freeze_interval, 1, 'linear',
-                                     'sgd', 'sum', 1.0)
+                                     'sgd', 'sum', np.random.RandomState(), 1.0)
 
         # Randomize initial q-values:
         params = lasagne.layers.helper.get_all_param_values(net.l_out)
@@ -204,7 +202,7 @@ class LinearTests(unittest.TestCase):
                                      self.discount,
                                      self.learning_rate, 0, 0, 0, 0,
                                      freeze_interval, 1, 'linear',
-                                     'sgd', 'sum', 1.0)
+                                     'sgd', 'sum', np.random.RandomState(), 1.0)
 
         self.train(net, 1000)
 
@@ -219,7 +217,7 @@ class LinearTests(unittest.TestCase):
                                      self.discount,
                                      self.learning_rate, 0, 0, 0, 0,
                                      freeze_interval, 1, 'linear',
-                                     'sgd', 'sum', 1.0)
+                                     'sgd', 'sum', np.random.RandomState(), 1.0)
 
         self.train(net, 1000)
 
@@ -234,7 +232,7 @@ class LinearTests(unittest.TestCase):
                                      self.discount,
                                      self.learning_rate, 0, 0, 0, 0,
                                      freeze_interval, 1, 'linear',
-                                     'sgd', 'sum', 1.0)
+                                     'sgd', 'sum', np.random.RandomState(), 1.0)
 
         self.train(net, freeze_interval * 2)
 
